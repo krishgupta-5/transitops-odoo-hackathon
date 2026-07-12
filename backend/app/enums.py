@@ -34,3 +34,12 @@ class DriverStatus(str, Enum):
     ON_TRIP = "ON_TRIP"
     OFF_DUTY = "OFF_DUTY"
     SUSPENDED = "SUSPENDED"
+
+
+class ExpenseCategory(str, Enum):
+    TOLL = "TOLL"
+    REPAIR = "REPAIR"
+    INSURANCE = "INSURANCE"
+    PERMIT = "PERMIT"
+    PARKING = "PARKING"
+    OTHER = "OTHER"
