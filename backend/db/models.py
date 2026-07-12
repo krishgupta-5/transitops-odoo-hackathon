@@ -1,10 +1,9 @@
 from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Date, Numeric
 from sqlalchemy.orm import relationship
 
 from db.database import Base
 from app.enums import UserRole, VehicleStatus, DriverStatus, TripStatus
-from sqlalchemy import Date, Numeric
 
 
 class User(Base):
@@ -74,6 +73,7 @@ class Vehicle(Base):
     )
 
     trips = relationship("Trip", back_populates="vehicle")
+    maintenances = relationship("Maintenance", back_populates="vehicle", cascade="all, delete-orphan")
 
 
 class Driver(Base):
@@ -137,6 +137,20 @@ class Trip(Base):
 Vehicle.fuel_logs = relationship("FuelLog", back_populates="vehicle", cascade="all, delete-orphan")
 Vehicle.expenses = relationship("Expense", back_populates="vehicle", cascade="all, delete-orphan")
 
+class Maintenance(Base):
+    __tablename__ = "maintenance"
+
+    id = Column(Integer, primary_key=True, index=True)
+    vehicle_id = Column(Integer, ForeignKey("vehicles.id", ondelete="CASCADE"), nullable=False)
+    service_type = Column(String(255), nullable=False)
+    service_date = Column(String(50), nullable=False)  # YYYY-MM-DD
+    cost = Column(Numeric(12, 2), nullable=False)
+    description = Column(String(512), nullable=True)
+    status = Column(String(50), default="SCHEDULED", nullable=False)
+    started_at = Column(DateTime(timezone=True), nullable=True)
+    completed_at = Column(DateTime(timezone=True), nullable=True)
+    cancelled_at = Column(DateTime(timezone=True), nullable=True)
+
 class FuelLog(Base):
     __tablename__ = "fuel_logs"
 
@@ -147,7 +161,6 @@ class FuelLog(Base):
     liters = Column(Numeric(10, 2), nullable=False)
     cost = Column(Numeric(12, 2), nullable=False)
     fuel_date = Column(Date, nullable=False)
-
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(
         DateTime(timezone=True),
@@ -157,7 +170,6 @@ class FuelLog(Base):
 
     vehicle = relationship("Vehicle", back_populates="fuel_logs")
     trip = relationship("Trip", back_populates="fuel_logs")
-
 
 class Expense(Base):
     __tablename__ = "expenses"
@@ -181,3 +193,4 @@ class Expense(Base):
     vehicle = relationship("Vehicle", back_populates="expenses")
     trip = relationship("Trip", back_populates="expenses")
 
+Maintenance.vehicle = relationship("Vehicle", back_populates="maintenances")

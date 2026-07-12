@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from core.settings import settings
 from db.database import engine, Base
-from routes import auth, trips, vehicles, drivers, fuel_logs, expenses, analytics
+from routes import auth, trips, vehicles, drivers, safety, fuel_logs, expenses, analytics
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -27,6 +27,7 @@ app.include_router(drivers.router, prefix=settings.API_V1_STR)
 app.include_router(fuel_logs.router, prefix=settings.API_V1_STR)
 app.include_router(expenses.router, prefix=settings.API_V1_STR)
 app.include_router(analytics.router, prefix=settings.API_V1_STR)
+app.include_router(safety.router, prefix=settings.API_V1_STR)
 
 
 @app.on_event("startup")
