@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from db.models import Trip, FuelLog, Expense, Vehicle
-from app.enums import TripStatus, VehicleStatus
+from db.models import Trip, FuelLog, Expense, Vehicle, Maintenance
+from app.enums import TripStatus, VehicleStatus, MaintenanceStatus
 
 def get_financial_summary(db: Session):
     # Total Revenue (Only completed trips)
@@ -13,21 +13,19 @@ def get_financial_summary(db: Session):
     # Total Other Expenses (From Expense)
     total_other_expenses = db.query(func.sum(Expense.amount)).scalar() or 0.0
 
-    # Maintenance Cost (Currently isolated because Safety/Maintenance is not merged)
-    # The integration is pending the other developer's merge.
-    # We must explicitly return null for maintenance and indicate it's unavailable.
-    total_maintenance_cost = None
-    maintenance_cost_available = False
+    # Maintenance Cost
+    total_maintenance_cost = float(db.query(func.sum(Maintenance.cost)).filter(
+        Maintenance.status == MaintenanceStatus.COMPLETED.value
+    ).scalar() or 0.0)
+    maintenance_cost_available = True
 
     # Operational Cost = Fuel Cost + Maintenance Cost
     total_operational_cost = None
     if maintenance_cost_available and total_maintenance_cost is not None:
         total_operational_cost = float(total_fuel_cost) + float(total_maintenance_cost)
 
-    # Net Profit
     # Net Profit = Revenue - Fuel Cost - Maintenance Cost - Other Expenses
-    # Since maintenance is missing, we use 0 for it in the net profit calculation
-    net_profit = float(total_revenue) - float(total_fuel_cost) - 0.0 - float(total_other_expenses)
+    net_profit = float(total_revenue) - float(total_fuel_cost) - float(total_maintenance_cost) - float(total_other_expenses)
 
     # Distance and Fuel Efficiency
     completed_trips = db.query(Trip).filter(
@@ -90,8 +88,11 @@ def get_vehicle_financials(db: Session, vehicle_id: int):
     # Costs
     fuel_cost = db.query(func.sum(FuelLog.cost)).filter(FuelLog.vehicle_id == vehicle_id).scalar() or 0.0
     other_expenses = db.query(func.sum(Expense.amount)).filter(Expense.vehicle_id == vehicle_id).scalar() or 0.0
-    maintenance_cost = None
-    maintenance_cost_available = False
+    maintenance_cost = float(db.query(func.sum(Maintenance.cost)).filter(
+        Maintenance.vehicle_id == vehicle_id,
+        Maintenance.status == MaintenanceStatus.COMPLETED.value
+    ).scalar() or 0.0)
+    maintenance_cost_available = True
 
     # Operational Cost = Fuel Cost + Maintenance Cost
     total_operational_cost = None
@@ -99,7 +100,7 @@ def get_vehicle_financials(db: Session, vehicle_id: int):
         total_operational_cost = float(fuel_cost) + float(maintenance_cost)
 
     # Net Profit = Revenue - Fuel Cost - Maintenance Cost - Other Expenses
-    profit = float(revenue) - float(fuel_cost) - 0.0 - float(other_expenses)
+    profit = float(revenue) - float(fuel_cost) - float(maintenance_cost) - float(other_expenses)
 
     # ROI = (Revenue - (Maintenance Cost + Fuel Cost)) / Acquisition Cost
     # Other expenses are explicitly excluded from ROI

@@ -34,9 +34,7 @@ export default function FuelLogsPage() {
   const [trips, setTrips] = useState<any[]>([]);
   
   const [formData, setFormData] = useState({
-    vehicle_id: '',
     trip_id: '',
-    liters: '',
     cost: '',
     fuel_date: new Date().toISOString().split('T')[0]
   });
@@ -66,17 +64,13 @@ export default function FuelLogsPage() {
     setError('');
     try {
       await createFuelLog({
-        vehicle_id: parseInt(formData.vehicle_id),
-        trip_id: formData.trip_id ? parseInt(formData.trip_id) : undefined,
-        liters: parseFloat(formData.liters),
+        trip_id: parseInt(formData.trip_id),
         cost: parseFloat(formData.cost),
         fuel_date: formData.fuel_date
       });
       setIsDialogOpen(false);
       setFormData({
-        vehicle_id: '',
         trip_id: '',
-        liters: '',
         cost: '',
         fuel_date: new Date().toISOString().split('T')[0]
       });
@@ -131,21 +125,18 @@ export default function FuelLogsPage() {
                 <label className="block text-xs font-bold text-gray-700 dark:text-gray-300">Completed Trip</label>
                 <Select onValueChange={(val: any) => {
                   if (!val) return;
-                  const trip = trips.find(t => t.id.toString() === val);
-                  if (trip) {
-                    setFormData({...formData, trip_id: val, vehicle_id: trip.vehicle_id.toString()});
-                  }
+                  setFormData({...formData, trip_id: val});
                 }}>
                   <SelectTrigger className="w-full bg-gray-50 dark:bg-[#1A1A1A] border-gray-200 dark:border-white/10 text-gray-900 dark:text-white text-xs font-semibold rounded-xl h-11 px-3.5">
                     <SelectValue placeholder="Select Completed Trip..." />
                   </SelectTrigger>
                   <SelectContent className="bg-white dark:bg-[#181818] border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-2xl shadow-xl max-h-60">
-                    {trips.length === 0 ? (
-                      <SelectItem value="none" disabled className="text-xs">No completed trips available</SelectItem>
+                    {trips.filter(t => !logs.some(l => l.trip_id === t.id)).length === 0 ? (
+                      <SelectItem value="none" disabled className="text-xs">No unlogged completed trips available</SelectItem>
                     ) : (
-                      trips.map(t => (
+                      trips.filter(t => !logs.some(l => l.trip_id === t.id)).map(t => (
                         <SelectItem key={t.id} value={t.id.toString()} className="text-xs font-semibold py-2">
-                          {t.trip_number} — {t.vehicle?.registration_number} (Fuel: {t.fuel_consumed}L)
+                          {t.trip_number} — {t.source} → {t.destination} — {t.vehicle?.registration_number}
                         </SelectItem>
                       ))
                     )}
@@ -153,20 +144,31 @@ export default function FuelLogsPage() {
                 </Select>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label htmlFor="liters" className="block text-xs font-bold text-gray-700 dark:text-gray-300">Liters</label>
-                  <Input 
-                    id="liters" 
-                    type="number"
-                    step="0.01"
-                    required
-                    placeholder="e.g. 120.5"
-                    className="w-full bg-gray-50 dark:bg-[#1A1A1A] border-gray-200 dark:border-white/10 text-gray-900 dark:text-white text-xs font-semibold rounded-xl h-10 px-3.5"
-                    value={formData.liters}
-                    onChange={(e) => setFormData({...formData, liters: e.target.value})}
-                  />
-                </div>
+              {formData.trip_id && trips.find(t => t.id.toString() === formData.trip_id) && (() => {
+                const t = trips.find(t => t.id.toString() === formData.trip_id);
+                return (
+                  <div className="bg-gray-50 dark:bg-white/[0.02] p-3 rounded-xl border border-gray-100 dark:border-white/[0.06] space-y-2">
+                    <div className="flex justify-between text-xs font-semibold">
+                      <span className="text-gray-500 dark:text-gray-400">Trip Number:</span>
+                      <span className="text-gray-900 dark:text-white">{t.trip_number}</span>
+                    </div>
+                    <div className="flex justify-between text-xs font-semibold">
+                      <span className="text-gray-500 dark:text-gray-400">Route:</span>
+                      <span className="text-gray-900 dark:text-white">{t.source} → {t.destination}</span>
+                    </div>
+                    <div className="flex justify-between text-xs font-semibold">
+                      <span className="text-gray-500 dark:text-gray-400">Vehicle:</span>
+                      <span className="text-gray-900 dark:text-white">{t.vehicle?.registration_number} / {t.vehicle?.name}</span>
+                    </div>
+                    <div className="flex justify-between text-xs font-semibold">
+                      <span className="text-gray-500 dark:text-gray-400">Fuel Consumed:</span>
+                      <span className="text-emerald-600 dark:text-emerald-400 font-bold">{t.fuel_consumed} L</span>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-1.5">
                   <label htmlFor="cost" className="block text-xs font-bold text-gray-700 dark:text-gray-300">Total Cost (INR)</label>
                   <Input 
@@ -210,6 +212,7 @@ export default function FuelLogsPage() {
             <TableRow className="border-gray-100 dark:border-white/[0.06] hover:bg-transparent">
               <TableHead className="text-xs font-bold text-gray-500 dark:text-gray-400 pl-6">Date</TableHead>
               <TableHead className="text-xs font-bold text-gray-500 dark:text-gray-400">Vehicle</TableHead>
+              <TableHead className="text-xs font-bold text-gray-500 dark:text-gray-400">Trip</TableHead>
               <TableHead className="text-xs font-bold text-gray-500 dark:text-gray-400">Liters</TableHead>
               <TableHead className="text-xs font-bold text-gray-500 dark:text-gray-400">Cost</TableHead>
               <TableHead className="text-xs font-bold text-gray-500 dark:text-gray-400">Unit Price</TableHead>
@@ -219,13 +222,13 @@ export default function FuelLogsPage() {
           <TableBody>
             {loading ? (
               <TableRow className="border-0">
-                <TableCell colSpan={6} className="py-0">
+                <TableCell colSpan={7} className="py-0">
                   <LoadingState message="Loading fuel logs..." className="py-16 min-h-[220px]" />
                 </TableCell>
               </TableRow>
             ) : logs.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center text-xs font-semibold text-gray-500 dark:text-gray-400">No fuel records found.</TableCell>
+                <TableCell colSpan={7} className="h-24 text-center text-xs font-semibold text-gray-500 dark:text-gray-400">No fuel records found.</TableCell>
               </TableRow>
             ) : (
               logs.map((log) => {
@@ -237,6 +240,7 @@ export default function FuelLogsPage() {
                       <div className="font-bold text-sm text-gray-900 dark:text-white">{log.vehicle?.registration_number}</div>
                       <div className="text-xs text-gray-500 dark:text-gray-400">{log.vehicle?.name}</div>
                     </TableCell>
+                    <TableCell className="text-xs font-semibold text-gray-700 dark:text-gray-300">{log.trip?.trip_number || `#${log.trip_id}`}</TableCell>
                     <TableCell className="text-xs font-bold text-gray-900 dark:text-white">{log.liters} L</TableCell>
                     <TableCell className="text-xs font-bold text-gray-900 dark:text-white">{formatINR(log.cost)}</TableCell>
                     <TableCell className="text-xs font-semibold text-gray-500 dark:text-gray-400">₹{unitPrice.toFixed(2)} / L</TableCell>

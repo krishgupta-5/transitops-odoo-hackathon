@@ -19,24 +19,24 @@ def create_fuel_log(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_roles(UserRole.FINANCIAL_ANALYST))
 ):
-    vehicle = db.query(Vehicle).filter(Vehicle.id == fuel_log_in.vehicle_id).first()
-    if not vehicle:
-        raise HTTPException(status_code=404, detail="Vehicle not found")
-
     trip = db.query(Trip).filter(Trip.id == fuel_log_in.trip_id).first()
     if not trip:
         raise HTTPException(status_code=404, detail="Trip not found")
 
-    if trip.vehicle_id != fuel_log_in.vehicle_id:
-        raise HTTPException(status_code=400, detail="Trip does not belong to the selected Vehicle")
-
-    if trip.status != TripStatus.COMPLETED:
+    if trip.status != TripStatus.COMPLETED.value:
         raise HTTPException(status_code=400, detail="Financial fuel logs can only be created for COMPLETED trips")
+        
+    if not trip.fuel_consumed or trip.fuel_consumed <= 0:
+        raise HTTPException(status_code=400, detail="Trip must have a valid fuel_consumed value > 0")
+
+    existing_log = db.query(FuelLog).filter(FuelLog.trip_id == trip.id).first()
+    if existing_log:
+        raise HTTPException(status_code=409, detail="A fuel log already exists for this trip")
 
     new_fuel_log = FuelLog(
-        vehicle_id=fuel_log_in.vehicle_id,
-        trip_id=fuel_log_in.trip_id,
-        liters=fuel_log_in.liters,
+        vehicle_id=trip.vehicle_id,
+        trip_id=trip.id,
+        liters=trip.fuel_consumed,
         cost=fuel_log_in.cost,
         fuel_date=fuel_log_in.fuel_date
     )

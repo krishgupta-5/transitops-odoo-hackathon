@@ -126,7 +126,7 @@ export const getFuelLogs = async (): Promise<FuelLog[]> => {
   return apiClient('/fuel-logs/');
 };
 
-export const createFuelLog = async (data: { vehicle_id: number; trip_id?: number; liters: number; cost: number; fuel_date: string }): Promise<FuelLog> => {
+export const createFuelLog = async (data: { trip_id: number; cost: number; fuel_date: string }): Promise<FuelLog> => {
   return apiClient('/fuel-logs/', {
     method: 'POST',
     body: JSON.stringify(data),

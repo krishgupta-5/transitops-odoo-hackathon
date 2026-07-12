@@ -50,11 +50,12 @@ export default function MaintenanceListPage() {
   const fetchMaintenances = async () => {
     setLoading(true);
     try {
-      let query = "?";
-      if (statusFilter !== 'all') query += `status=${statusFilter}&`;
-      if (search) query += `service_type=${search}&`;
+      const params = new URLSearchParams();
+      if (statusFilter !== 'all') params.append('status', statusFilter);
+      if (search) params.append('service_type', search);
       
-      const data = await apiClient(`/maintenance/${query}`);
+      const queryString = params.toString() ? `?${params.toString()}` : '';
+      const data = await apiClient(`/maintenance/${queryString}`);
       setMaintenances(data);
     } catch (e) {
       console.error(e);
