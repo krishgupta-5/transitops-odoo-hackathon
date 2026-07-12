@@ -47,3 +47,24 @@ class TokenData(BaseModel):
 
 class TokenRefresh(BaseModel):
     refresh_token: str
+
+
+class VehicleOut(BaseModel):
+    id: int
+    name: str
+    registration_number: str
+    vehicle_type: str
+    max_load_capacity: float
+    odometer: int
+    status: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class DriverOut(BaseModel):
+    id: int
+    name: str
+    license_number: str
+    status: str
+
+    model_config = ConfigDict(from_attributes=True)
