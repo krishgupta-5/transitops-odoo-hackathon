@@ -1,8 +1,7 @@
-markdown
-# 🚚 TransitOps — Enterprise Fleet & Logistics Management Platform
+# TransitOps — Enterprise Fleet & Logistics Management Platform
 
 <p align="center">
-  <img src="docs/images/banner.png" alt="TransitOps Banner" width="100%">
+  <img src="frontend/public/favicon.svg" alt="TransitOps Logo" width="150">
 </p>
 
 <p align="center">
@@ -10,14 +9,13 @@ markdown
   <img src="https://img.shields.io/badge/FastAPI-Backend-009688?logo=fastapi" alt="FastAPI">
   <img src="https://img.shields.io/badge/Next.js-Frontend-black?logo=nextdotjs" alt="Next.js">
   <img src="https://img.shields.io/badge/PostgreSQL-Database-blue?logo=postgresql" alt="PostgreSQL">
-  <img src="https://img.shields.io/badge/Redis-Cache-red?logo=redis" alt="Redis">
   <img src="https://img.shields.io/badge/JWT-Authentication-orange" alt="JWT">
   <img src="https://img.shields.io/badge/License-MIT-green" alt="License">
 </p>
 
 ---
 
-## 📖 Project Description
+## Project Description
 
 **TransitOps** is a modern, enterprise-grade Fleet & Logistics Management Platform built to streamline commercial transportation and supply chain operations. 
 
@@ -25,7 +23,7 @@ The platform connects multiple organizational departments—from fleet registrar
 
 ---
 
-## 🏗️ System Architecture
+## System Architecture
 
 <p align="center">
   <img src="docs/images/architecture.png" alt="TransitOps System Architecture" width="100%">
@@ -34,13 +32,13 @@ The platform connects multiple organizational departments—from fleet registrar
 The TransitOps architecture is split into a modular decoupled frontend and backend:
 * **Frontend**: Next.js App Router workspace utilizing React, TypeScript, and Tailwind CSS.
 * **Backend**: FastAPI microservices framework using SQLAlchemy ORM for transaction management.
-* **Storage & Caching**: PostgreSQL for persistence, and Redis for distributed caching, session token storage, and rate-limiting.
+* **Storage & Caching**: PostgreSQL for persistence.
 
 ---
 
-## ⚙️ Operational Workflow
+## Operational Workflow
 
-text
+```text
                   User Login
                        │
                        ▼
@@ -53,8 +51,10 @@ text
      ▼                 ▼                 ▼                ▼
  Dispatcher      Fleet Manager     Safety Officer  Financial Analyst
      │                 │                 │                │
-Create Trip       Register Fleet     Schedule        Manage Expenses
-Dispatch Trip     Add Drivers        Maintenance     Fuel Logs
+ Manage Trips     Manage Vehicles   Manage          Manage Expenses
+ (Create/Dispatch) (Register)        Maintenance     & Fuel Logs
+ Manage Fleet     Manage Drivers    Monitor Drivers Monitor Fleet
+ & Fuel           (Register)                        Analytics
      │                 │                 │                │
      └─────────────────┴─────────────────┼────────────────┘
                                          ▼
@@ -62,13 +62,13 @@ Dispatch Trip     Add Drivers        Maintenance     Fuel Logs
                                          │
                                          ▼
                             Financial Analytics Engine
-
+```
 
 ---
 
-## 👥 User Roles & Capabilities
+## User Roles & Capabilities
 
-### 🛠️ Safety Officer
+### Safety Officer
 * **Scheduled Maintenance**: Schedule servicing tasks for vehicles (routine checks, engine/brake repairs).
 * **Servicing Lifecycle**: Transactionally transition records from `SCHEDULED` ➔ `IN_PROGRESS` ➔ `COMPLETED` / `CANCELLED`.
 * **Automated Safeguards**:
@@ -77,65 +77,66 @@ Dispatch Trip     Add Drivers        Maintenance     Fuel Logs
   * Blocks starting maintenance on any vehicle currently `ON_TRIP` or `RETIRED`.
 * **Driver Safety Roster**: Read-only compliance portal tracking CDL validity statuses (`EXPIRED`, `EXPIRING SOON`, `VALID`) and highlights safety alerts for scores under `60%`.
 
-### 🚚 Dispatcher
+### Dispatcher
 * **Trip Lifecycle**: Manage assignment logs through `DRAFT` ➔ `DISPATCHED` ➔ `COMPLETED` / `CANCELLED`.
 * **Resource Assignment**: Dispatch loads to vehicles and drivers while validating availability checks (e.g. blocking `IN_SHOP` or `SUSPENDED` assets).
 
-### 🚛 Fleet Manager
+### Fleet Manager
 * **Vehicle Registry**: Manage fleet vehicle records (model, type, load capacity, odometer, cost).
 * **Driver Directory**: Register commercial drivers, license classifications, and manage shift states.
 
-### 💰 Financial Analyst
+### Financial Analyst
 * **Cost Auditing**: Record transactional trip expenses and fuel consumption logs.
 * **Analytics Engine**: View total fleet revenue, operating margins, vehicle profitability (ROI), and fuel efficiency metrics.
 
 ---
 
-## 📂 Repository Structure
+## Repository Structure
 
-text
+```text
 TransitOps/
 │
 ├── backend/
-│   ├── app/               # FastAPI Application Core
-│   │   ├── enums.py       # Global Domain Enums (UserRoles, VehicleStatus)
-│   │   ├── schemas.py     # Pydantic Validation Schemas
-│   │   └── oauth2.py      # JWT Authenticator & RBAC Dependencies
-│   ├── db/                # Database & SQLAlchemy Models
-│   ├── routes/            # API Route Handlers (Trips, Vehicles, Safety)
 │   ├── alembic/           # Database Migration Scripts
+│   ├── app/               # FastAPI Application Core (schemas, oauth2, enums)
+│   │   └── services/      # Business logic (e.g. financial analytics)
+│   ├── core/              # Application Settings
+│   ├── db/                # Database & SQLAlchemy Models
+│   ├── routes/            # API Route Handlers (auth, trips, vehicles, safety, etc.)
+│   ├── scripts/           # Utility scripts (seed_demo_users)
 │   ├── requirements.txt   # Python Dependencies
-│   └── main.py            # App Entrypoint
+│   └── alembic.ini        # Alembic Configuration
 │
 ├── frontend/
+│   ├── public/            # Static Assets
 │   ├── src/
-│   │   ├── app/           # Next.js Pages & Route Handlers
-│   │   ├── components/    # Reusable UI Blocks (Shadcn/UI components)
-│   │   └── lib/           # Axios / Fetch API client
+│   │   ├── app/           # Next.js App Router (dispatcher, fleet-manager, safety-officer, financial-analyst)
+│   │   ├── components/    # Reusable UI Blocks & Guards (Shadcn/UI, AuthGuard)
+│   │   └── lib/           # Axios / Fetch API client & utilities
 │   ├── package.json       # Node.js Dependencies
 │   └── tailwind.config.ts # Styling Tokens
 │
 ├── docker-compose.yml
 └── README.md
-
+```
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 * **Frontend**: Next.js (App Router), React, TypeScript, Tailwind CSS, shadcn/ui, Lucide Icons.
 * **Backend**: FastAPI, SQLAlchemy, Alembic, Pydantic, PyJWT.
-* **Persistence**: PostgreSQL, Redis.
+* **Persistence**: PostgreSQL.
 * **DevOps**: Docker, Docker Compose, Git.
 
 
 
-## 🚀 Installation & Local Setup
+## Installation & Local Setup
 
 ### Prerequisites
 * Python 3.12+
 * Node.js 18+
-* PostgreSQL & Redis instances (or run via Docker)
+* PostgreSQL instance (or run via Docker)
 
 ### Backend Setup
 1. Navigate to the backend directory:
@@ -162,9 +163,9 @@ TransitOps/
    ACCESS_TOKEN_EXPIRE_MINUTES=30
    ```
 5. Apply database migrations:
-   bash
+   ```bash
    alembic upgrade head
-   
+   ```
 6. Start the development server:
    ```bash
    uvicorn app.main:app --reload --port 8000
@@ -172,28 +173,28 @@ TransitOps/
 
 ### Frontend Setup
 1. Navigate to the frontend directory:
-   bash
+   ```bash
    cd frontend
    ```
 2. Install Node packages:
-   bash
+   ```bash
    npm install
    ```
 3. Run the Next.js development server:
-   bash
+   ```bash
    npm run dev
    ```
 4. Access the frontend app at `http://localhost:3000`.
 
 ### Run with Docker Compose
 To launch the entire platform, including database dependencies, with a single command:
-bash
+```bash
 docker compose up --build
-
+```
 
 ---
 
-## 📚 API Documentation
+## API Documentation
 
 Once the backend is running, interactive API docs are auto-generated at:
 * **Swagger UI**: `http://localhost:8000/docs`
@@ -201,10 +202,9 @@ Once the backend is running, interactive API docs are auto-generated at:
 
 ---
 
-## 👨‍💻 Team
+## Team
 
+* **Krish Gupta**
+* **Sahil Mishra**
 * **Mohit Kumar**
-* **Sahil**
-* **Mohit**
 * **Chandrika Pandey**
-```
