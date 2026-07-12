@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect, useState } from "react";
-import { getExpenses, createExpense, Expense } from "@/lib/api";
+import { getExpenses, createExpense, deleteExpense, Expense, getVehicles, getTrips } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Trash2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Dialog,
@@ -30,6 +31,9 @@ export default function ExpensesPage() {
   const [error, setError] = useState('');
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [vehicles, setVehicles] = useState<any[]>([]);
+  const [trips, setTrips] = useState<any[]>([]);
+  
   const [formData, setFormData] = useState({
     vehicle_id: '',
     trip_id: '',
@@ -38,6 +42,42 @@ export default function ExpensesPage() {
     expense_date: new Date().toISOString().split('T')[0],
     description: ''
   });
+
+  useEffect(() => {
+    if (isDialogOpen) {
+      getVehicles().then(setVehicles).catch(console.error);
+      getTrips('COMPLETED').then(setTrips).catch(console.error);
+    }
+  }, [isDialogOpen]);
+
+  const handleTripChange = (val: any) => {
+    if (!val || val === "none") {
+      setFormData(prev => ({ ...prev, trip_id: '' }));
+      return;
+    }
+    const trip = trips.find(t => t.id.toString() === val);
+    if (trip) {
+      setFormData(prev => ({
+        ...prev,
+        trip_id: val,
+        vehicle_id: trip.vehicle_id.toString()
+      }));
+    }
+  };
+
+  const handleVehicleChange = (val: any) => {
+    if (!val) return;
+    setFormData(prev => {
+      const newFormData = { ...prev, vehicle_id: val };
+      if (prev.trip_id) {
+        const trip = trips.find(t => t.id.toString() === prev.trip_id);
+        if (trip && trip.vehicle_id.toString() !== val) {
+          newFormData.trip_id = '';
+        }
+      }
+      return newFormData;
+    });
+  };
 
   const loadExpenses = async () => {
     try {
@@ -74,6 +114,16 @@ export default function ExpensesPage() {
     }
   };
 
+  const handleDelete = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this expense?')) return;
+    try {
+      await deleteExpense(id);
+      loadExpenses();
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete expense');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -96,25 +146,41 @@ export default function ExpensesPage() {
             <form onSubmit={handleSubmit} className="space-y-4 pt-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label htmlFor="vehicle_id" className="text-sm font-medium leading-none">Vehicle ID</label>
-                  <Input 
-                    id="vehicle_id" 
-                    type="number"
-                    required
-                    className="bg-zinc-950 border-zinc-800 text-zinc-100"
-                    value={formData.vehicle_id}
-                    onChange={(e) => setFormData({...formData, vehicle_id: e.target.value})}
-                  />
+                  <label className="text-sm font-medium leading-none">Vehicle *</label>
+                  <Select required value={formData.vehicle_id} onValueChange={handleVehicleChange}>
+                    <SelectTrigger className="bg-zinc-950 border-zinc-800 text-zinc-100">
+                      <SelectValue placeholder="Select Vehicle" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-zinc-900 border-zinc-800 text-zinc-100">
+                      {vehicles.length === 0 ? (
+                        <SelectItem value="none" disabled>Loading vehicles...</SelectItem>
+                      ) : (
+                        vehicles.map(v => (
+                          <SelectItem key={v.id} value={v.id.toString()}>
+                            {v.registration_number} — {v.name}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
-                  <label htmlFor="trip_id" className="text-sm font-medium leading-none">Trip ID (Optional)</label>
-                  <Input 
-                    id="trip_id" 
-                    type="number"
-                    className="bg-zinc-950 border-zinc-800 text-zinc-100"
-                    value={formData.trip_id}
-                    onChange={(e) => setFormData({...formData, trip_id: e.target.value})}
-                  />
+                  <label className="text-sm font-medium leading-none">Trip (Optional)</label>
+                  <Select value={formData.trip_id || "none"} onValueChange={handleTripChange}>
+                    <SelectTrigger className="bg-zinc-950 border-zinc-800 text-zinc-100">
+                      <SelectValue placeholder="No Trip / Vehicle-level Expense" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-zinc-900 border-zinc-800 text-zinc-100">
+                      <SelectItem value="none">No Trip / Vehicle-level Expense</SelectItem>
+                      {trips
+                        .filter(t => !formData.vehicle_id || t.vehicle_id.toString() === formData.vehicle_id)
+                        .map(t => (
+                          <SelectItem key={t.id} value={t.id.toString()}>
+                            {t.trip_number} — {t.route?.source} → {t.route?.destination}
+                          </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -140,6 +206,7 @@ export default function ExpensesPage() {
                     id="amount" 
                     type="number"
                     step="0.01"
+                    min="0.01"
                     required
                     className="bg-zinc-950 border-zinc-800 text-zinc-100"
                     value={formData.amount}
@@ -161,9 +228,10 @@ export default function ExpensesPage() {
                 </div>
                 <div className="space-y-2">
                   <label htmlFor="description" className="text-sm font-medium leading-none">Description</label>
-                  <Input 
+                  <textarea 
                     id="description" 
-                    className="bg-zinc-950 border-zinc-800 text-zinc-100"
+                    className="flex min-h-[80px] w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 ring-offset-zinc-950 placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-800 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    placeholder="Enter toll plaza, permit, parking, repair, or other expense details..."
                     value={formData.description}
                     onChange={(e) => setFormData({...formData, description: e.target.value})}
                   />
@@ -193,16 +261,17 @@ export default function ExpensesPage() {
               <TableHead className="text-zinc-400">Category</TableHead>
               <TableHead className="text-zinc-400">Description</TableHead>
               <TableHead className="text-zinc-400 text-right">Amount</TableHead>
+              <TableHead className="text-zinc-400 text-right w-12"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center text-zinc-500">Loading...</TableCell>
+                <TableCell colSpan={6} className="h-24 text-center text-zinc-500">Loading...</TableCell>
               </TableRow>
             ) : expenses.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center text-zinc-500">No expenses found.</TableCell>
+                <TableCell colSpan={6} className="h-24 text-center text-zinc-500">No expenses found.</TableCell>
               </TableRow>
             ) : (
               expenses.map((expense) => (
@@ -219,6 +288,11 @@ export default function ExpensesPage() {
                   </TableCell>
                   <TableCell className="text-zinc-400">{expense.description || '-'}</TableCell>
                   <TableCell className="text-right text-zinc-300 font-medium">{formatINR(expense.amount)}</TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="ghost" size="icon" onClick={() => handleDelete(expense.id)} className="h-8 w-8 text-zinc-500 hover:text-red-400 hover:bg-red-400/10">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))
             )}

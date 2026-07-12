@@ -19,11 +19,15 @@ def get_financial_summary(db: Session):
     total_maintenance_cost = None
     maintenance_cost_available = False
 
-    # Total Operational Cost (Temporary: excluding maintenance)
-    total_operational_cost = float(total_fuel_cost) + float(total_other_expenses)
+    # Operational Cost = Fuel Cost + Maintenance Cost
+    total_operational_cost = None
+    if maintenance_cost_available and total_maintenance_cost is not None:
+        total_operational_cost = float(total_fuel_cost) + float(total_maintenance_cost)
 
     # Net Profit
-    net_profit = float(total_revenue) - total_operational_cost
+    # Net Profit = Revenue - Fuel Cost - Maintenance Cost - Other Expenses
+    # Since maintenance is missing, we use 0 for it in the net profit calculation
+    net_profit = float(total_revenue) - float(total_fuel_cost) - 0.0 - float(total_other_expenses)
 
     # Distance and Fuel Efficiency
     completed_trips = db.query(Trip).filter(
@@ -42,7 +46,7 @@ def get_financial_summary(db: Session):
             total_fuel_consumed += float(t.fuel_consumed)
 
     cost_per_km = None
-    if total_actual_distance > 0:
+    if total_actual_distance > 0 and total_operational_cost is not None:
         cost_per_km = total_operational_cost / total_actual_distance
 
     fleet_fuel_efficiency = None
@@ -89,13 +93,19 @@ def get_vehicle_financials(db: Session, vehicle_id: int):
     maintenance_cost = None
     maintenance_cost_available = False
 
-    total_operational_cost = float(fuel_cost) + float(other_expenses)
-    profit = float(revenue) - total_operational_cost
+    # Operational Cost = Fuel Cost + Maintenance Cost
+    total_operational_cost = None
+    if maintenance_cost_available and maintenance_cost is not None:
+        total_operational_cost = float(fuel_cost) + float(maintenance_cost)
 
-    # ROI
+    # Net Profit = Revenue - Fuel Cost - Maintenance Cost - Other Expenses
+    profit = float(revenue) - float(fuel_cost) - 0.0 - float(other_expenses)
+
+    # ROI = (Revenue - (Maintenance Cost + Fuel Cost)) / Acquisition Cost
+    # Other expenses are explicitly excluded from ROI
     roi_percentage = None
-    if vehicle.acquisition_cost and vehicle.acquisition_cost > 0:
-        roi_percentage = (profit / float(vehicle.acquisition_cost)) * 100
+    if vehicle.acquisition_cost and vehicle.acquisition_cost > 0 and total_operational_cost is not None:
+        roi_percentage = ((float(revenue) - total_operational_cost) / float(vehicle.acquisition_cost)) * 100
 
     # Distance and Efficiency
     completed_trips = db.query(Trip).filter(
@@ -115,7 +125,7 @@ def get_vehicle_financials(db: Session, vehicle_id: int):
             total_fuel_consumed += float(t.fuel_consumed)
 
     cost_per_km = None
-    if actual_distance > 0:
+    if actual_distance > 0 and total_operational_cost is not None:
         cost_per_km = total_operational_cost / actual_distance
 
     fuel_efficiency = None

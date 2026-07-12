@@ -76,7 +76,9 @@ export default function VehicleAnalyticsPage() {
         <Card className="bg-zinc-900/50 border-zinc-800">
           <CardHeader className="pb-2">
             <CardDescription className="text-zinc-400">Total Costs</CardDescription>
-            <CardTitle className="text-2xl text-red-400">{formatINR(data.total_operational_cost)}</CardTitle>
+            <CardTitle className="text-2xl text-red-400">
+              {data.total_operational_cost !== null ? formatINR(data.total_operational_cost) : <span className="text-yellow-500 text-lg">Incomplete</span>}
+            </CardTitle>
           </CardHeader>
         </Card>
 

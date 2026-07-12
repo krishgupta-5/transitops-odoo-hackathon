@@ -9,21 +9,21 @@ from app.enums import UserRole
 from app.services.financial_analytics import get_financial_summary, get_vehicle_financials
 
 router = APIRouter(
-    prefix="/api/v1/analytics",
+    prefix="/analytics",
     tags=["Analytics"]
 )
 
 @router.get("/financial/summary")
 def get_summary(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles([UserRole.FINANCIAL_ANALYST]))
+    current_user: User = Depends(require_roles(UserRole.FINANCIAL_ANALYST))
 ):
     return get_financial_summary(db)
 
 @router.get("/financial/vehicles")
 def list_vehicle_financials(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles([UserRole.FINANCIAL_ANALYST]))
+    current_user: User = Depends(require_roles(UserRole.FINANCIAL_ANALYST))
 ):
     vehicles = db.query(Vehicle).all()
     results = []
@@ -37,7 +37,7 @@ def list_vehicle_financials(
 def get_single_vehicle_financials(
     vehicle_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles([UserRole.FINANCIAL_ANALYST]))
+    current_user: User = Depends(require_roles(UserRole.FINANCIAL_ANALYST))
 ):
     fin = get_vehicle_financials(db, vehicle_id)
     if not fin:

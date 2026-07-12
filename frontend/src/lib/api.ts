@@ -87,7 +87,7 @@ export type Expense = {
 
 export type FinancialSummary = {
   total_revenue: number;
-  total_operational_cost: number;
+  total_operational_cost: number | null;
   total_fuel_cost: number;
   total_maintenance_cost: number | null;
   maintenance_cost_available: boolean;
@@ -109,7 +109,7 @@ export type VehicleFinancials = {
   maintenance_cost: number | null;
   maintenance_cost_available: boolean;
   other_expenses: number;
-  total_operational_cost: number;
+  total_operational_cost: number | null;
   actual_distance: number;
   cost_per_km: number | null;
   fuel_efficiency: number | null;
@@ -152,4 +152,20 @@ export const getVehicleFinancialsList = async (): Promise<VehicleFinancials[]> =
 
 export const getVehicleFinancials = async (vehicleId: number): Promise<VehicleFinancials> => {
   return apiClient(`/analytics/financial/vehicles/${vehicleId}`);
+};
+
+export const deleteFuelLog = async (id: number): Promise<void> => {
+  return apiClient(`/fuel-logs/${id}`, { method: 'DELETE' });
+};
+
+export const deleteExpense = async (id: number): Promise<void> => {
+  return apiClient(`/expenses/${id}`, { method: 'DELETE' });
+};
+
+export const getTrips = async (status?: string): Promise<any[]> => {
+  return apiClient(status ? `/trips/?status=${status}` : '/trips/');
+};
+
+export const getVehicles = async (): Promise<any[]> => {
+  return apiClient('/vehicles/');
 };
