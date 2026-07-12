@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from "react";
-import { getFuelLogs, createFuelLog, deleteFuelLog, FuelLog, getTrips } from "@/lib/api";
+import { getFuelLogs, createFuelLog, deleteFuelLog, FuelLog, getTrips, apiClient } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
@@ -32,6 +32,9 @@ export default function FuelLogsPage() {
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [trips, setTrips] = useState<any[]>([]);
+  const [page, setPage] = useState(1);
+  const limit = 10;
+  const [hasMore, setHasMore] = useState(false);
   
   const [formData, setFormData] = useState({
     trip_id: '',
@@ -42,11 +45,13 @@ export default function FuelLogsPage() {
   const loadData = async () => {
     try {
       setLoading(true);
+      const skip = (page - 1) * limit;
       const [logsData, tripsData] = await Promise.all([
-        getFuelLogs(),
+        apiClient(`/fuel-logs/?skip=${skip}&limit=${limit}`),
         getTrips('status=COMPLETED')
       ]);
       setLogs(logsData);
+      setHasMore(logsData.length === limit);
       setTrips(tripsData);
     } catch (err: any) {
       setError(err.message || 'Failed to load fuel logs');
@@ -57,7 +62,7 @@ export default function FuelLogsPage() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [page]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,6 +79,7 @@ export default function FuelLogsPage() {
         cost: '',
         fuel_date: new Date().toISOString().split('T')[0]
       });
+      setPage(1); // Go to page 1 on submit to see the new entry
       loadData();
     } catch (err: any) {
       setError(err.message || 'Failed to create fuel log');
@@ -206,55 +212,76 @@ export default function FuelLogsPage() {
 
       {error && <div className="text-red-600 dark:text-red-400 bg-red-500/10 p-4 rounded-xl border border-red-500/20 text-xs font-semibold">{error}</div>}
 
-      <div className="bg-white dark:bg-[#121212] rounded-3xl border border-gray-200 dark:border-white/10 overflow-hidden shadow-xs">
-        <Table>
-          <TableHeader>
-            <TableRow className="border-gray-100 dark:border-white/[0.06] hover:bg-transparent">
-              <TableHead className="text-xs font-bold text-gray-500 dark:text-gray-400 pl-6">Date</TableHead>
-              <TableHead className="text-xs font-bold text-gray-500 dark:text-gray-400">Vehicle</TableHead>
-              <TableHead className="text-xs font-bold text-gray-500 dark:text-gray-400">Trip</TableHead>
-              <TableHead className="text-xs font-bold text-gray-500 dark:text-gray-400">Liters</TableHead>
-              <TableHead className="text-xs font-bold text-gray-500 dark:text-gray-400">Cost</TableHead>
-              <TableHead className="text-xs font-bold text-gray-500 dark:text-gray-400">Unit Price</TableHead>
-              <TableHead className="text-xs font-bold text-gray-500 dark:text-gray-400 text-right w-12 pr-6"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              <TableRow className="border-0">
-                <TableCell colSpan={7} className="py-0">
-                  <LoadingState message="Loading fuel logs..." className="py-16 min-h-[220px]" />
-                </TableCell>
+      <div className="bg-white dark:bg-[#121212] rounded-3xl border border-gray-200 dark:border-white/10 overflow-hidden shadow-xs flex flex-col">
+        <div className="flex-1 overflow-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="border-gray-100 dark:border-white/[0.06] hover:bg-transparent">
+                <TableHead className="text-xs font-bold text-gray-500 dark:text-gray-400 pl-6">Date</TableHead>
+                <TableHead className="text-xs font-bold text-gray-500 dark:text-gray-400">Vehicle</TableHead>
+                <TableHead className="text-xs font-bold text-gray-500 dark:text-gray-400">Trip</TableHead>
+                <TableHead className="text-xs font-bold text-gray-500 dark:text-gray-400">Liters</TableHead>
+                <TableHead className="text-xs font-bold text-gray-500 dark:text-gray-400">Cost</TableHead>
+                <TableHead className="text-xs font-bold text-gray-500 dark:text-gray-400">Unit Price</TableHead>
+                <TableHead className="text-xs font-bold text-gray-500 dark:text-gray-400 text-right w-12 pr-6"></TableHead>
               </TableRow>
-            ) : logs.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center text-xs font-semibold text-gray-500 dark:text-gray-400">No fuel records found.</TableCell>
-              </TableRow>
-            ) : (
-              logs.map((log) => {
-                const unitPrice = log.liters > 0 ? log.cost / log.liters : 0;
-                return (
-                  <TableRow key={log.id} className="border-gray-100 dark:border-white/[0.06] hover:bg-gray-50 dark:hover:bg-white/[0.02]">
-                    <TableCell className="text-xs font-semibold text-gray-700 dark:text-gray-300 pl-6">{new Date(log.fuel_date).toLocaleDateString()}</TableCell>
-                    <TableCell>
-                      <div className="font-bold text-sm text-gray-900 dark:text-white">{log.vehicle?.registration_number}</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">{log.vehicle?.name}</div>
-                    </TableCell>
-                    <TableCell className="text-xs font-semibold text-gray-700 dark:text-gray-300">{log.trip?.trip_number || `#${log.trip_id}`}</TableCell>
-                    <TableCell className="text-xs font-bold text-gray-900 dark:text-white">{log.liters} L</TableCell>
-                    <TableCell className="text-xs font-bold text-gray-900 dark:text-white">{formatINR(log.cost)}</TableCell>
-                    <TableCell className="text-xs font-semibold text-gray-500 dark:text-gray-400">₹{unitPrice.toFixed(2)} / L</TableCell>
-                    <TableCell className="text-right pr-6">
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(log.id)} className="h-8 w-8 text-gray-400 hover:text-red-500 hover:bg-red-500/10">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                );
-              })
-            )}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow className="border-0">
+                  <TableCell colSpan={7} className="py-0">
+                    <LoadingState message="Loading fuel logs..." className="py-16 min-h-[220px]" />
+                  </TableCell>
+                </TableRow>
+              ) : logs.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="h-24 text-center text-xs font-semibold text-gray-500 dark:text-gray-400">No fuel records found.</TableCell>
+                </TableRow>
+              ) : (
+                logs.map((log) => {
+                  const unitPrice = log.liters > 0 ? log.cost / log.liters : 0;
+                  return (
+                    <TableRow key={log.id} className="border-gray-100 dark:border-white/[0.06] hover:bg-gray-50 dark:hover:bg-white/[0.02]">
+                      <TableCell className="text-xs font-semibold text-gray-700 dark:text-gray-300 pl-6">{new Date(log.fuel_date).toLocaleDateString()}</TableCell>
+                      <TableCell>
+                        <div className="font-bold text-sm text-gray-900 dark:text-white">{log.vehicle?.registration_number}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">{log.vehicle?.name}</div>
+                      </TableCell>
+                      <TableCell className="text-xs font-semibold text-gray-700 dark:text-gray-300">{log.trip?.trip_number || `#${log.trip_id}`}</TableCell>
+                      <TableCell className="text-xs font-bold text-gray-900 dark:text-white">{log.liters} L</TableCell>
+                      <TableCell className="text-xs font-bold text-gray-900 dark:text-white">{formatINR(log.cost)}</TableCell>
+                      <TableCell className="text-xs font-semibold text-gray-500 dark:text-gray-400">₹{unitPrice.toFixed(2)} / L</TableCell>
+                      <TableCell className="text-right pr-6">
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(log.id)} className="h-8 w-8 text-gray-400 hover:text-red-500 hover:bg-red-500/10">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+        </div>
+        
+        {/* Pagination Controls */}
+        <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 dark:border-white/[0.06] bg-gray-50/50 dark:bg-white/[0.02]">
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="text-xs font-medium px-4 py-2 rounded-xl border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Previous
+          </button>
+          <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">Page {page}</span>
+          <button
+            onClick={() => setPage(p => p + 1)}
+            disabled={!hasMore}
+            className="text-xs font-medium px-4 py-2 rounded-xl border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Next
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -14,6 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { LoadingState } from "@/components/ui/LoadingState";
+import { formatWeight, formatDistance } from "@/lib/utils";
 
 type Vehicle = {
   id: number;
@@ -31,17 +32,22 @@ export default function FleetVehiclesPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
+  const [page, setPage] = useState(1);
+  const limit = 10;
+  const [hasMore, setHasMore] = useState(false);
 
   const fetchVehicles = async () => {
     setLoading(true);
     try {
-      let query = "?";
+      const skip = (page - 1) * limit;
+      let query = `?skip=${skip}&limit=${limit}&`;
       if (statusFilter !== 'all') query += `status=${statusFilter}&`;
       if (typeFilter !== 'all') query += `vehicle_type=${typeFilter}&`;
       if (search) query += `search=${search}&`;
       
       const data = await apiClient(`/vehicles/${query}`);
       setVehicles(data);
+      setHasMore(data.length === limit);
     } catch (e) {
       console.error(e);
     } finally {
@@ -50,11 +56,15 @@ export default function FleetVehiclesPage() {
   };
 
   useEffect(() => {
+    setPage(1); // Reset to page 1 on filter/search change
+  }, [search, statusFilter, typeFilter]);
+
+  useEffect(() => {
     const delay = setTimeout(() => {
       fetchVehicles();
     }, 300);
     return () => clearTimeout(delay);
-  }, [search, statusFilter, typeFilter]);
+  }, [search, statusFilter, typeFilter, page]);
 
   const getVehicleStatusStyle = (status: string) => {
     switch (status) {
@@ -153,7 +163,11 @@ export default function FleetVehiclesPage() {
               </TableRow>
             ) : vehicles.length === 0 ? (
               <TableRow className="border-0">
-                <TableCell colSpan={6} className="text-center py-10 text-gray-400 text-xs">No vehicles found.</TableCell>
+                <TableCell colSpan={6} className="text-center py-10 text-gray-400 text-xs">
+                  {search || statusFilter !== 'all' || typeFilter !== 'all' 
+                    ? "No vehicles match your current filters." 
+                    : "No vehicles registered yet."}
+                </TableCell>
               </TableRow>
             ) : (
               vehicles.map((v) => (
@@ -162,9 +176,9 @@ export default function FleetVehiclesPage() {
                   <TableCell className="text-gray-600 dark:text-gray-300">{v.name}</TableCell>
                   <TableCell className="text-gray-600 dark:text-gray-300">
                     <div>{v.vehicle_type}</div>
-                    <div className="text-[11px] text-gray-400">{v.max_load_capacity} kg</div>
+                    <div className="text-[11px] text-gray-400">{formatWeight(v.max_load_capacity)}</div>
                   </TableCell>
-                  <TableCell className="text-gray-600 dark:text-gray-300">{v.odometer} km</TableCell>
+                  <TableCell className="text-gray-600 dark:text-gray-300">{formatDistance(v.odometer)}</TableCell>
                   <TableCell>
                     <span
                       style={getVehicleStatusStyle(v.status)}
@@ -186,6 +200,25 @@ export default function FleetVehiclesPage() {
             )}
           </TableBody>
         </Table>
+        
+        {/* Pagination Controls */}
+        <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 dark:border-white/[0.06] bg-gray-50/50 dark:bg-white/[0.02]">
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Previous
+          </button>
+          <span className="text-xs text-gray-500 dark:text-gray-400">Page {page}</span>
+          <button
+            onClick={() => setPage(p => p + 1)}
+            disabled={!hasMore}
+            className="text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Next
+          </button>
+        </div>
       </div>
     </div>
   );

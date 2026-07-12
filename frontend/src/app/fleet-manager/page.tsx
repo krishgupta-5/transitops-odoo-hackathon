@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { apiClient } from "@/lib/api";
 import { Truck, Users, Wrench, AlertTriangle } from "lucide-react";
 import Link from "next/link";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 
 type Vehicle = {
   id: number;
@@ -189,33 +190,100 @@ export default function FleetManagerDashboard() {
 
       {/* Rounded Panels Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Status Breakdown Panel */}
-        <div className="rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#121212] p-6 shadow-xs">
+        {/* Charts and Status Row */}
+        <div className="rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#121212] p-6 shadow-xs col-span-1 md:col-span-2">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-5">
-            Status Breakdown
+            Fleet Overview
           </h2>
-          <div className="space-y-3 text-xs">
-            <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-white/[0.05]">
-              <span className="text-gray-600 dark:text-gray-300 font-medium">Available</span>
-              <span className="font-bold text-gray-900 dark:text-white bg-gray-200 dark:bg-white/10 px-2.5 py-0.5 rounded-full">{availableVehicles}</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Vehicle Chart */}
+            <div className="flex flex-col items-center">
+              <h3 className="text-[11px] uppercase tracking-wider font-semibold text-gray-500 mb-2">Vehicle Status</h3>
+              {totalVehicles === 0 ? (
+                <div className="h-48 flex items-center justify-center text-xs text-gray-400">No vehicles data</div>
+              ) : (
+                <div className="h-48 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={[
+                          { name: 'Available', value: availableVehicles },
+                          { name: 'On Trip', value: onTripVehicles },
+                          { name: 'In Shop', value: inShopVehicles },
+                          { name: 'Retired', value: retiredVehicles },
+                        ].filter(d => d.value > 0)}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={40}
+                        outerRadius={70}
+                        paddingAngle={2}
+                        dataKey="value"
+                      >
+                        {
+                          [
+                            { name: 'Available', value: availableVehicles, color: '#10B981' }, // Emerald
+                            { name: 'On Trip', value: onTripVehicles, color: '#3B82F6' }, // Blue
+                            { name: 'In Shop', value: inShopVehicles, color: '#F59E0B' }, // Amber
+                            { name: 'Retired', value: retiredVehicles, color: '#6B7280' }, // Gray
+                          ].filter(d => d.value > 0).map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))
+                        }
+                      </Pie>
+                      <Tooltip formatter={(value) => [value, 'Vehicles']} />
+                      <Legend iconType="circle" wrapperStyle={{ fontSize: '11px' }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
             </div>
-            <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-white/[0.05]">
-              <span className="text-gray-600 dark:text-gray-300 font-medium">On Trip</span>
-              <span className="font-bold text-gray-900 dark:text-white bg-gray-200 dark:bg-white/10 px-2.5 py-0.5 rounded-full">{onTripVehicles}</span>
-            </div>
-            <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-white/[0.05]">
-              <span className="text-gray-600 dark:text-gray-300 font-medium">In Shop</span>
-              <span className="font-bold text-gray-900 dark:text-white bg-gray-200 dark:bg-white/10 px-2.5 py-0.5 rounded-full">{inShopVehicles}</span>
-            </div>
-            <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-white/[0.05]">
-              <span className="text-gray-600 dark:text-gray-300 font-medium">Retired</span>
-              <span className="font-bold text-gray-900 dark:text-white bg-gray-200 dark:bg-white/10 px-2.5 py-0.5 rounded-full">{retiredVehicles}</span>
+
+            {/* Driver Chart */}
+            <div className="flex flex-col items-center">
+              <h3 className="text-[11px] uppercase tracking-wider font-semibold text-gray-500 mb-2">Driver Status</h3>
+              {totalDrivers === 0 ? (
+                <div className="h-48 flex items-center justify-center text-xs text-gray-400">No driver data</div>
+              ) : (
+                <div className="h-48 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={[
+                          { name: 'Available', value: availableDrivers },
+                          { name: 'On Trip', value: onTripDrivers },
+                          { name: 'Off Duty', value: drivers.filter(d => d.status === 'OFF_DUTY').length },
+                          { name: 'Suspended', value: drivers.filter(d => d.status === 'SUSPENDED').length },
+                        ].filter(d => d.value > 0)}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={40}
+                        outerRadius={70}
+                        paddingAngle={2}
+                        dataKey="value"
+                      >
+                        {
+                          [
+                            { name: 'Available', value: availableDrivers, color: '#10B981' }, // Emerald
+                            { name: 'On Trip', value: onTripDrivers, color: '#3B82F6' }, // Blue
+                            { name: 'Off Duty', value: drivers.filter(d => d.status === 'OFF_DUTY').length, color: '#6B7280' }, // Gray
+                            { name: 'Suspended', value: drivers.filter(d => d.status === 'SUSPENDED').length, color: '#EF4444' }, // Red
+                          ].filter(d => d.value > 0).map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))
+                        }
+                      </Pie>
+                      <Tooltip formatter={(value) => [value, 'Drivers']} />
+                      <Legend iconType="circle" wrapperStyle={{ fontSize: '11px' }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
             </div>
           </div>
         </div>
 
         {/* License Watchlist Panel */}
-        <div className="rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#121212] p-6 shadow-xs">
+        <div className="rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#121212] p-6 shadow-xs col-span-1 md:col-span-2">
           <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-5">
             License Watchlist
           </h2>

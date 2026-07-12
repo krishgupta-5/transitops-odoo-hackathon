@@ -8,6 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { LoadingState } from "@/components/ui/LoadingState";
 
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
+
 const formatINR = (value: number) => {
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
@@ -47,6 +49,16 @@ export default function FinancialDashboard() {
   if (!summary) {
     return <LoadingState message="Loading financial analytics..." />;
   }
+
+  // Prep data for Top 5 Profitable Vehicles
+  const topVehiclesData = [...vehicles]
+    .sort((a, b) => b.profit - a.profit)
+    .slice(0, 5)
+    .map(v => ({
+      reg: v.registration_number,
+      Profit: v.profit,
+      Revenue: v.revenue
+    }));
 
   return (
     <div className="space-y-8 max-w-[1400px] mx-auto font-sans pb-12">
@@ -106,6 +118,66 @@ export default function FinancialDashboard() {
               {summary.cost_per_km !== null ? formatINR(summary.cost_per_km) : <span className="text-amber-500 text-lg">Incomplete</span>}
             </CardTitle>
           </CardHeader>
+        </Card>
+      </div>
+
+      {/* Analytics Charts Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="bg-white dark:bg-[#121212] border-gray-200 dark:border-white/10 shadow-xs rounded-2xl">
+          <CardHeader>
+            <CardTitle className="text-sm font-bold text-gray-900 dark:text-white">Revenue vs Operational Cost</CardTitle>
+            <CardDescription className="text-xs">Visual breakdown of profitability margin</CardDescription>
+          </CardHeader>
+          <CardContent className="h-64">
+            {summary.net_profit !== null && summary.total_operational_cost !== null ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={[
+                      { name: 'Operational Cost', value: summary.total_operational_cost, color: '#DC2626' },
+                      { name: 'Net Profit', value: Math.max(0, summary.net_profit), color: '#059669' },
+                    ]}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={90}
+                    paddingAngle={3}
+                    dataKey="value"
+                  >
+                    <Cell fill="#DC2626" />
+                    <Cell fill="#059669" />
+                  </Pie>
+                  <Tooltip formatter={(value) => [formatINR(Number(value)), 'Amount']} />
+                  <Legend iconType="circle" wrapperStyle={{ fontSize: '11px' }} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-xs text-gray-400">No complete financial data available</div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white dark:bg-[#121212] border-gray-200 dark:border-white/10 shadow-xs rounded-2xl">
+          <CardHeader>
+            <CardTitle className="text-sm font-bold text-gray-900 dark:text-white">Top 5 Profitable Vehicles</CardTitle>
+            <CardDescription className="text-xs">Based on total net profits generated</CardDescription>
+          </CardHeader>
+          <CardContent className="h-64">
+            {topVehiclesData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={topVehiclesData}>
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                  <XAxis dataKey="reg" tick={{ fontSize: 10 }} />
+                  <YAxis tickFormatter={(val) => `₹${val / 1000}k`} tick={{ fontSize: 10 }} />
+                  <Tooltip formatter={(value) => [formatINR(Number(value)), 'Profit']} />
+                  <Legend wrapperStyle={{ fontSize: '11px' }} />
+                  <Bar dataKey="Profit" fill="#059669" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-xs text-gray-400">No vehicle data available</div>
+            )}
+          </CardContent>
         </Card>
       </div>
 

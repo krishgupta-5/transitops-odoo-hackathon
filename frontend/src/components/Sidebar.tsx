@@ -41,6 +41,9 @@ export const DEFAULT_FLEET_NAV_ITEMS: NavItem[] = [
   { name: 'Dashboard', href: '/fleet-manager', icon: <LayoutDashboard size={18} /> },
   { name: 'Vehicles', href: '/fleet-manager/vehicles', icon: <Truck size={18} /> },
   { name: 'Drivers', href: '/fleet-manager/drivers', icon: <Users size={18} /> },
+  { name: 'Maintenance', href: '/fleet-manager/maintenance', icon: <Wrench size={18} /> },
+  { name: 'Fuel & Expenses', href: '/fleet-manager/fuel-expenses', icon: <DollarSign size={18} /> },
+  { name: 'Analytics', href: '/fleet-manager/analytics', icon: <BarChart3 size={18} /> },
   { name: 'Profile Settings', href: '/fleet-manager/profile', icon: <UserCog size={18} /> },
 ];
 
@@ -57,9 +60,6 @@ export const DEFAULT_DISPATCHER_NAV_ITEMS: NavItem[] = [
   { name: 'Trips', href: '/dispatcher/trips', icon: <MapPin size={18} /> },
   { name: 'Fleet Status', href: '/dispatcher/fleet', icon: <Truck size={18} /> },
   { name: 'Drivers', href: '/dispatcher/drivers', icon: <Users size={18} /> },
-  { name: 'Maintenance', href: '/dispatcher/maintenance', icon: <Wrench size={18} /> },
-  { name: 'Fuel & Expenses', href: '/dispatcher/fuel', icon: <Fuel size={18} /> },
-  { name: 'Analytics', href: '/dispatcher/analytics', icon: <BarChart3 size={18} /> },
   { name: 'Profile Settings', href: '/dispatcher/profile', icon: <UserCog size={18} /> },
 ];
 
