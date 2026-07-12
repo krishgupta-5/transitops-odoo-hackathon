@@ -3,7 +3,7 @@ from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 
 from db.database import Base
-from app.enums import UserRole, VehicleStatus, DriverStatus
+from app.enums import UserRole, VehicleStatus, DriverStatus, TripStatus
 from sqlalchemy import Date, Numeric
 
 
@@ -73,6 +73,8 @@ class Vehicle(Base):
         onupdate=lambda: datetime.now(timezone.utc),
     )
 
+    trips = relationship("Trip", back_populates="vehicle")
+
 
 class Driver(Base):
     __tablename__ = "drivers"
@@ -92,3 +94,40 @@ class Driver(Base):
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
     )
+
+    trips = relationship("Trip", back_populates="driver")
+
+
+class Trip(Base):
+    __tablename__ = "trips"
+
+    id = Column(Integer, primary_key=True, index=True)
+    trip_number = Column(String(50), unique=True, index=True, nullable=False)
+    source = Column(String(255), nullable=False)
+    destination = Column(String(255), nullable=False)
+    
+    vehicle_id = Column(Integer, ForeignKey("vehicles.id", ondelete="RESTRICT"), nullable=False)
+    driver_id = Column(Integer, ForeignKey("drivers.id", ondelete="RESTRICT"), nullable=False)
+    
+    cargo_weight = Column(Numeric(10, 2), nullable=False)
+    planned_distance = Column(Numeric(10, 2), nullable=False)
+    revenue = Column(Numeric(12, 2), nullable=False, default=0)
+    
+    status = Column(String(50), default=TripStatus.DRAFT.value, nullable=False)
+    
+    initial_odometer = Column(Integer, nullable=True)
+    final_odometer = Column(Integer, nullable=True)
+    fuel_consumed = Column(Numeric(10, 2), nullable=True)
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+    dispatched_at = Column(DateTime(timezone=True), nullable=True)
+    completed_at = Column(DateTime(timezone=True), nullable=True)
+    cancelled_at = Column(DateTime(timezone=True), nullable=True)
+
+    vehicle = relationship("Vehicle", back_populates="trips")
+    driver = relationship("Driver", back_populates="trips")
