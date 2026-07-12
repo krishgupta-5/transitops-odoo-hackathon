@@ -1,4 +1,4 @@
-```markdown
+markdown
 # 🚚 TransitOps — Enterprise Fleet & Logistics Management Platform
 
 <p align="center">
@@ -40,7 +40,7 @@ The TransitOps architecture is split into a modular decoupled frontend and backe
 
 ## ⚙️ Operational Workflow
 
-```text
+text
                   User Login
                        │
                        ▼
@@ -62,7 +62,7 @@ Dispatch Trip     Add Drivers        Maintenance     Fuel Logs
                                          │
                                          ▼
                             Financial Analytics Engine
-```
+
 
 ---
 
@@ -93,7 +93,7 @@ Dispatch Trip     Add Drivers        Maintenance     Fuel Logs
 
 ## 📂 Repository Structure
 
-```text
+text
 TransitOps/
 │
 ├── backend/
@@ -117,7 +117,7 @@ TransitOps/
 │
 ├── docker-compose.yml
 └── README.md
-```
+
 
 ---
 
@@ -128,7 +128,7 @@ TransitOps/
 * **Persistence**: PostgreSQL, Redis.
 * **DevOps**: Docker, Docker Compose, Git.
 
----
+
 
 ## 🚀 Installation & Local Setup
 
