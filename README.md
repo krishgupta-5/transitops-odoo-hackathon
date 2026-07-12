@@ -162,9 +162,9 @@ TransitOps/
    ACCESS_TOKEN_EXPIRE_MINUTES=30
    ```
 5. Apply database migrations:
-   ```bash
+   bash
    alembic upgrade head
-   ```
+   
 6. Start the development server:
    ```bash
    uvicorn app.main:app --reload --port 8000
@@ -172,24 +172,24 @@ TransitOps/
 
 ### Frontend Setup
 1. Navigate to the frontend directory:
-   ```bash
+   bash
    cd frontend
    ```
 2. Install Node packages:
-   ```bash
+   bash
    npm install
    ```
 3. Run the Next.js development server:
-   ```bash
+   bash
    npm run dev
    ```
 4. Access the frontend app at `http://localhost:3000`.
 
 ### Run with Docker Compose
 To launch the entire platform, including database dependencies, with a single command:
-```bash
+bash
 docker compose up --build
-```
+
 
 ---
 
