@@ -131,3 +131,53 @@ class Trip(Base):
 
     vehicle = relationship("Vehicle", back_populates="trips")
     driver = relationship("Driver", back_populates="trips")
+    fuel_logs = relationship("FuelLog", back_populates="trip", cascade="all, delete-orphan")
+    expenses = relationship("Expense", back_populates="trip", cascade="all, delete-orphan")
+
+Vehicle.fuel_logs = relationship("FuelLog", back_populates="vehicle", cascade="all, delete-orphan")
+Vehicle.expenses = relationship("Expense", back_populates="vehicle", cascade="all, delete-orphan")
+
+class FuelLog(Base):
+    __tablename__ = "fuel_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    vehicle_id = Column(Integer, ForeignKey("vehicles.id", ondelete="CASCADE"), nullable=False)
+    trip_id = Column(Integer, ForeignKey("trips.id", ondelete="CASCADE"), nullable=False)
+    
+    liters = Column(Numeric(10, 2), nullable=False)
+    cost = Column(Numeric(12, 2), nullable=False)
+    fuel_date = Column(Date, nullable=False)
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    vehicle = relationship("Vehicle", back_populates="fuel_logs")
+    trip = relationship("Trip", back_populates="fuel_logs")
+
+
+class Expense(Base):
+    __tablename__ = "expenses"
+
+    id = Column(Integer, primary_key=True, index=True)
+    vehicle_id = Column(Integer, ForeignKey("vehicles.id", ondelete="CASCADE"), nullable=False)
+    trip_id = Column(Integer, ForeignKey("trips.id", ondelete="CASCADE"), nullable=True)
+    
+    category = Column(String(50), nullable=False)
+    amount = Column(Numeric(12, 2), nullable=False)
+    expense_date = Column(Date, nullable=False)
+    description = Column(String(500), nullable=True)
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    vehicle = relationship("Vehicle", back_populates="expenses")
+    trip = relationship("Trip", back_populates="expenses")
+

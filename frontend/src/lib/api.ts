@@ -55,3 +55,101 @@ export async function apiClient(endpoint: string, options: RequestInit = {}) {
 
   return response.json();
 }
+
+// Financial Analyst API Types
+
+export type FuelLog = {
+  id: number;
+  vehicle_id: number;
+  trip_id: number;
+  liters: number;
+  cost: number;
+  fuel_date: string;
+  created_at: string;
+  vehicle: any;
+  trip: any;
+};
+
+export type ExpenseCategory = 'TOLL' | 'REPAIR' | 'INSURANCE' | 'PERMIT' | 'PARKING' | 'OTHER';
+
+export type Expense = {
+  id: number;
+  vehicle_id: number;
+  trip_id?: number | null;
+  category: ExpenseCategory;
+  amount: number;
+  expense_date: string;
+  description?: string | null;
+  created_at: string;
+  vehicle: any;
+  trip?: any;
+};
+
+export type FinancialSummary = {
+  total_revenue: number;
+  total_operational_cost: number;
+  total_fuel_cost: number;
+  total_maintenance_cost: number | null;
+  maintenance_cost_available: boolean;
+  total_other_expenses: number;
+  net_profit: number;
+  total_actual_distance: number;
+  cost_per_km: number | null;
+  fleet_fuel_efficiency: number | null;
+  fleet_utilization: number;
+};
+
+export type VehicleFinancials = {
+  vehicle_id: number;
+  registration_number: string;
+  vehicle_name: string;
+  vehicle_type: string;
+  revenue: number;
+  fuel_cost: number;
+  maintenance_cost: number | null;
+  maintenance_cost_available: boolean;
+  other_expenses: number;
+  total_operational_cost: number;
+  actual_distance: number;
+  cost_per_km: number | null;
+  fuel_efficiency: number | null;
+  profit: number;
+  acquisition_cost: number | null;
+  roi_percentage: number | null;
+};
+
+// API Functions
+
+export const getFuelLogs = async (): Promise<FuelLog[]> => {
+  return apiClient('/fuel-logs/');
+};
+
+export const createFuelLog = async (data: { vehicle_id: number; trip_id: number; liters: number; cost: number; fuel_date: string }): Promise<FuelLog> => {
+  return apiClient('/fuel-logs/', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+};
+
+export const getExpenses = async (): Promise<Expense[]> => {
+  return apiClient('/expenses/');
+};
+
+export const createExpense = async (data: { vehicle_id: number; trip_id?: number; category: string; amount: number; expense_date: string; description?: string }): Promise<Expense> => {
+  return apiClient('/expenses/', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+};
+
+export const getFinancialSummary = async (): Promise<FinancialSummary> => {
+  return apiClient('/analytics/financial/summary');
+};
+
+export const getVehicleFinancialsList = async (): Promise<VehicleFinancials[]> => {
+  return apiClient('/analytics/financial/vehicles');
+};
+
+export const getVehicleFinancials = async (vehicleId: number): Promise<VehicleFinancials> => {
+  return apiClient(`/analytics/financial/vehicles/${vehicleId}`);
+};
