@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Date, Numeric
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Date, Numeric, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from db.database import Base
@@ -159,10 +159,13 @@ class Maintenance(Base):
 
 class FuelLog(Base):
     __tablename__ = "fuel_logs"
+    __table_args__ = (
+        UniqueConstraint("trip_id", name="uq_fuel_logs_trip_id"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     vehicle_id = Column(Integer, ForeignKey("vehicles.id", ondelete="CASCADE"), nullable=False)
-    trip_id = Column(Integer, ForeignKey("trips.id", ondelete="CASCADE"), nullable=False, unique=True)
+    trip_id = Column(Integer, ForeignKey("trips.id", ondelete="CASCADE"), nullable=False)
     
     liters = Column(Numeric(10, 2), nullable=False)
     cost = Column(Numeric(12, 2), nullable=False)

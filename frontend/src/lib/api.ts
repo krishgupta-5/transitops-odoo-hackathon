@@ -24,10 +24,15 @@ export async function apiClient(endpoint: string, options: RequestInit = {}) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  let response;
+  try {
+    response = await fetch(`${API_BASE}${endpoint}`, {
+      ...options,
+      headers,
+    });
+  } catch (error) {
+    throw new ApiError('Unable to connect to the server. Please try again.', 0, null);
+  }
 
   if (!response.ok) {
     let data;
@@ -44,7 +49,16 @@ export async function apiClient(endpoint: string, options: RequestInit = {}) {
       window.location.href = '/login';
     }
 
-    const message = data.detail || 'An API error occurred';
+    let message = data.detail || 'An API error occurred';
+    
+    if (response.status === 422 && Array.isArray(data.detail)) {
+      message = data.detail.map((err: any) => `${err.loc?.slice(1).join('.')} ${err.msg}`).join(', ');
+    } else if (response.status === 403) {
+      message = 'You do not have permission to access this resource.';
+    } else if (response.status >= 500) {
+      message = 'An unexpected server error occurred. Please try again later.';
+    }
+
     throw new ApiError(typeof message === 'string' ? message : JSON.stringify(message), response.status, data);
   }
 

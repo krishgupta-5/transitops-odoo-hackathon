@@ -31,16 +31,21 @@ export default function FleetDriversPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [page, setPage] = useState(1);
+  const limit = 10;
+  const [hasMore, setHasMore] = useState(false);
 
   const fetchDrivers = async () => {
     setLoading(true);
     try {
-      let query = "?";
+      const skip = (page - 1) * limit;
+      let query = `?skip=${skip}&limit=${limit}&`;
       if (statusFilter !== 'all') query += `status=${statusFilter}&`;
       if (search) query += `search=${search}&`;
       
       const data = await apiClient(`/drivers/${query}`);
       setDrivers(data);
+      setHasMore(data.length === limit);
     } catch (e) {
       console.error(e);
     } finally {
@@ -49,11 +54,15 @@ export default function FleetDriversPage() {
   };
 
   useEffect(() => {
+    setPage(1);
+  }, [search, statusFilter]);
+
+  useEffect(() => {
     const delay = setTimeout(() => {
       fetchDrivers();
     }, 300);
     return () => clearTimeout(delay);
-  }, [search, statusFilter]);
+  }, [search, statusFilter, page]);
 
   const getDriverStatusStyle = (status: string) => {
     switch (status) {
@@ -187,7 +196,11 @@ export default function FleetDriversPage() {
               </TableRow>
             ) : drivers.length === 0 ? (
               <TableRow className="border-0">
-                <TableCell colSpan={6} className="text-center py-10 text-gray-400 text-xs">No drivers found.</TableCell>
+                <TableCell colSpan={6} className="text-center py-10 text-gray-400 text-xs">
+                  {search || statusFilter !== 'all'
+                    ? "No drivers match your current filters."
+                    : "No drivers registered yet."}
+                </TableCell>
               </TableRow>
             ) : (
               drivers.map((d) => {
@@ -239,6 +252,25 @@ export default function FleetDriversPage() {
             )}
           </TableBody>
         </Table>
+        
+        {/* Pagination Controls */}
+        <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 dark:border-white/[0.06] bg-gray-50/50 dark:bg-white/[0.02]">
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Previous
+          </button>
+          <span className="text-xs text-gray-500 dark:text-gray-400">Page {page}</span>
+          <button
+            onClick={() => setPage(p => p + 1)}
+            disabled={!hasMore}
+            className="text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Next
+          </button>
+        </div>
       </div>
     </div>
   );

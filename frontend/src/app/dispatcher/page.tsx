@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/table";
 import { AlertCircle, Truck, MapPin, Users, Clock, ArrowRight } from "lucide-react";
 import { LoadingState } from "@/components/ui/LoadingState";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 
 export default function DispatcherDashboard() {
   const [trips, setTrips] = useState<any[]>([]);
@@ -241,39 +242,70 @@ export default function DispatcherDashboard() {
           )}
         </div>
 
-        {/* Right 1 Col: Status Breakdown matching Fleet Manager Status Breakdown Panel */}
+        {/* Right 1 Col: Status Breakdown (Charts) */}
         <div className="rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#121212] p-6 shadow-xs flex flex-col justify-between">
           <div>
             <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-5">
-              Status Breakdown
+              Operations Overview
             </h2>
-            <div className="space-y-3 text-xs">
-              <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-white/[0.05]">
-                <span className="text-gray-600 dark:text-gray-300 font-medium">Dispatched Trips</span>
-                <span className="font-bold text-gray-900 dark:text-white bg-gray-200 dark:bg-white/10 px-2.5 py-0.5 rounded-full">{activeTripsCount}</span>
+            <div className="space-y-6">
+              <div className="flex flex-col items-center">
+                <h3 className="text-[11px] uppercase tracking-wider font-semibold text-gray-500 mb-2">Trip Status</h3>
+                {trips.length === 0 ? (
+                  <div className="h-32 flex items-center justify-center text-xs text-gray-400">No trips data</div>
+                ) : (
+                  <div className="h-32 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={[
+                            { name: 'Draft', value: pendingTripsCount },
+                            { name: 'Dispatched', value: activeTripsCount },
+                            { name: 'Completed', value: completedTripsCount },
+                            { name: 'Cancelled', value: trips.filter(t => t.status === "CANCELLED").length },
+                          ].filter(d => d.value > 0)}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={25}
+                          outerRadius={45}
+                          paddingAngle={2}
+                          dataKey="value"
+                        >
+                          {
+                            [
+                              { name: 'Draft', value: pendingTripsCount, color: '#6B7280' },
+                              { name: 'Dispatched', value: activeTripsCount, color: '#2563EB' },
+                              { name: 'Completed', value: completedTripsCount, color: '#059669' },
+                              { name: 'Cancelled', value: trips.filter(t => t.status === "CANCELLED").length, color: '#E11D48' },
+                            ].filter(d => d.value > 0).map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))
+                          }
+                        </Pie>
+                        <Tooltip formatter={(value) => [value, 'Trips']} />
+                        <Legend iconType="circle" wrapperStyle={{ fontSize: '10px' }} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
               </div>
-              <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-white/[0.05]">
-                <span className="text-gray-600 dark:text-gray-300 font-medium">Draft Trips</span>
-                <span className="font-bold text-gray-900 dark:text-white bg-gray-200 dark:bg-white/10 px-2.5 py-0.5 rounded-full">{pendingTripsCount}</span>
-              </div>
-              <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-white/[0.05]">
-                <span className="text-gray-600 dark:text-gray-300 font-medium">Available Vehicles</span>
-                <span className="font-bold text-gray-900 dark:text-white bg-gray-200 dark:bg-white/10 px-2.5 py-0.5 rounded-full">{availableVehiclesCount}</span>
-              </div>
-              <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-white/[0.05]">
-                <span className="text-gray-600 dark:text-gray-300 font-medium">Vehicles On Trip</span>
-                <span className="font-bold text-gray-900 dark:text-white bg-gray-200 dark:bg-white/10 px-2.5 py-0.5 rounded-full">{activeVehiclesCount}</span>
-              </div>
-              <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-white/[0.05]">
-                <span className="text-gray-600 dark:text-gray-300 font-medium">Drivers Ready</span>
-                <span className="font-bold text-gray-900 dark:text-white bg-gray-200 dark:bg-white/10 px-2.5 py-0.5 rounded-full">{availableDriversCount}</span>
+              <div className="flex flex-col items-center border-t border-gray-100 dark:border-white/[0.06] pt-4">
+                <h3 className="text-[11px] uppercase tracking-wider font-semibold text-gray-500 mb-2">Fleet Utilization</h3>
+                <div className="w-full flex flex-col items-center mt-2">
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white">{fleetUtilization}%</div>
+                  <div className="w-full h-2 bg-gray-100 dark:bg-white/10 rounded-full mt-3 overflow-hidden">
+                    <div 
+                      className="h-full bg-black dark:bg-white rounded-full transition-all duration-500"
+                      style={{ width: `${fleetUtilization}%` }}
+                    />
+                  </div>
+                  <div className="w-full flex justify-between mt-2 text-[10px] text-gray-500 font-bold">
+                    <span>Active: {activeVehiclesCount}</span>
+                    <span>Total Op: {operationalVehicles}</span>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-
-          <div className="mt-6 pt-4 border-t border-gray-100 dark:border-white/[0.06] flex justify-between items-center text-xs">
-            <span className="text-gray-500 dark:text-gray-400">Total Fleet Active</span>
-            <span className="font-bold text-gray-900 dark:text-white">{activeVehiclesCount + availableVehiclesCount} units</span>
           </div>
         </div>
       </div>

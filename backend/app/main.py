@@ -2,7 +2,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from core.settings import settings
-from db.database import engine, Base
 from routes import auth, trips, vehicles, drivers, safety, fuel_logs, expenses, analytics
 
 app = FastAPI(
@@ -19,7 +18,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Register routers
+# Register routers (each exactly once)
 app.include_router(auth.router, prefix=settings.API_V1_STR)
 app.include_router(trips.router, prefix=settings.API_V1_STR)
 app.include_router(vehicles.router, prefix=settings.API_V1_STR)
@@ -32,8 +31,6 @@ app.include_router(safety.router, prefix=settings.API_V1_STR)
 
 @app.on_event("startup")
 def on_startup():
-    import db.models
-    Base.metadata.create_all(bind=engine)
     try:
         from scripts.seed_demo_users import seed
         seed()
