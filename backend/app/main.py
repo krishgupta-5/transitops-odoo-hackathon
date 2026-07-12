@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from core.settings import settings
 from db.database import engine, Base
-from routes import auth, trips
+from routes import auth, trips, vehicles, drivers
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -22,6 +22,8 @@ app.add_middleware(
 # Register routers
 app.include_router(auth.router, prefix=settings.API_V1_STR)
 app.include_router(trips.router, prefix=settings.API_V1_STR)
+app.include_router(vehicles.router, prefix=settings.API_V1_STR)
+app.include_router(drivers.router, prefix=settings.API_V1_STR)
 
 
 @app.on_event("startup")

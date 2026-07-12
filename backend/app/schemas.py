@@ -1,6 +1,6 @@
-from datetime import datetime
+from datetime import datetime, date
 from typing import Optional
-from pydantic import BaseModel, EmailStr, ConfigDict
+from pydantic import BaseModel, EmailStr, ConfigDict, Field
 
 from app.enums import UserRole, TripStatus
 
@@ -58,21 +58,63 @@ class VehicleOut(BaseModel):
     vehicle_type: str
     max_load_capacity: float
     odometer: int
+    acquisition_cost: Optional[float] = None
     status: str
+    created_at: datetime
+    updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+class VehicleCreate(BaseModel):
+    registration_number: str = Field(..., min_length=1)
+    name: str = Field(..., min_length=1)
+    vehicle_type: str = Field(..., min_length=1)
+    max_load_capacity: float = Field(..., gt=0)
+    odometer: int = Field(0, ge=0)
+    acquisition_cost: Optional[float] = Field(None, ge=0)
+
+class VehicleUpdate(BaseModel):
+    registration_number: Optional[str] = None
+    name: Optional[str] = None
+    vehicle_type: Optional[str] = None
+    max_load_capacity: Optional[float] = Field(None, gt=0)
+    odometer: Optional[int] = Field(None, ge=0)
+    acquisition_cost: Optional[float] = Field(None, ge=0)
+    status: Optional[str] = None
 
 
 class DriverOut(BaseModel):
     id: int
     name: str
     license_number: str
+    license_category: str
+    license_expiry_date: date
+    contact_number: Optional[str] = None
+    safety_score: Optional[float] = None
     status: str
+    created_at: datetime
+    updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
+class DriverCreate(BaseModel):
+    name: str = Field(..., min_length=1)
+    license_number: str = Field(..., min_length=1)
+    license_category: str = Field(..., min_length=1)
+    license_expiry_date: date
+    contact_number: str = Field(..., min_length=1)
+    safety_score: Optional[float] = Field(None, ge=0, le=100)
 
-from pydantic import Field
+class DriverUpdate(BaseModel):
+    name: Optional[str] = None
+    license_number: Optional[str] = None
+    license_category: Optional[str] = None
+    license_expiry_date: Optional[date] = None
+    contact_number: Optional[str] = None
+    safety_score: Optional[float] = Field(None, ge=0, le=100)
+    status: Optional[str] = None
+
+
 
 class TripCreate(BaseModel):
     source: str = Field(..., min_length=1)
