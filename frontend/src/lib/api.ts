@@ -97,6 +97,7 @@ export type FinancialSummary = {
   cost_per_km: number | null;
   fleet_fuel_efficiency: number | null;
   fleet_utilization: number;
+  overall_roi_percentage?: number | null;
 };
 
 export type VehicleFinancials = {
@@ -111,6 +112,7 @@ export type VehicleFinancials = {
   other_expenses: number;
   total_operational_cost: number | null;
   actual_distance: number;
+  total_km?: number | null;
   cost_per_km: number | null;
   fuel_efficiency: number | null;
   profit: number;
@@ -124,7 +126,7 @@ export const getFuelLogs = async (): Promise<FuelLog[]> => {
   return apiClient('/fuel-logs/');
 };
 
-export const createFuelLog = async (data: { vehicle_id: number; trip_id: number; liters: number; cost: number; fuel_date: string }): Promise<FuelLog> => {
+export const createFuelLog = async (data: { vehicle_id: number; trip_id?: number; liters: number; cost: number; fuel_date: string }): Promise<FuelLog> => {
   return apiClient('/fuel-logs/', {
     method: 'POST',
     body: JSON.stringify(data),

@@ -14,6 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { AlertCircle } from "lucide-react";
+import { LoadingState } from "@/components/ui/LoadingState";
 
 type Driver = {
   id: number;
@@ -55,13 +56,18 @@ export default function DispatcherDriversPage() {
     return () => clearTimeout(delay);
   }, [search, statusFilter]);
 
-  const getStatusColor = (status: string) => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'AVAILABLE': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
-      case 'ON_TRIP': return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
-      case 'OFF_DUTY': return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-      case 'SUSPENDED': return 'bg-red-500/10 text-red-400 border-red-500/20';
-      default: return 'bg-zinc-800 text-zinc-300';
+      case 'AVAILABLE':
+        return <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white shadow-xs border-none">Available</Badge>;
+      case 'ON_TRIP':
+        return <Badge className="bg-blue-600 hover:bg-blue-700 text-white shadow-xs border-none">On Trip</Badge>;
+      case 'OFF_DUTY':
+        return <Badge className="bg-amber-500 hover:bg-amber-600 text-white shadow-xs border-none">Off Duty</Badge>;
+      case 'SUSPENDED':
+        return <Badge className="bg-rose-600 hover:bg-rose-700 text-white shadow-xs border-none">Suspended</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
     }
   };
 
@@ -72,91 +78,82 @@ export default function DispatcherDriversPage() {
     thirtyDaysFromNow.setDate(now.getDate() + 30);
     
     if (expiry < now) {
-      return <Badge variant="outline" className="bg-red-500/10 text-red-400 border-red-500/20 gap-1"><AlertCircle className="w-3 h-3"/> EXPIRED</Badge>;
+      return <Badge variant="outline" className="bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 gap-1 text-[10px] font-bold"><AlertCircle className="w-3 h-3"/> EXPIRED</Badge>;
     } else if (expiry <= thirtyDaysFromNow) {
-      return <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/20 gap-1"><AlertCircle className="w-3 h-3"/> EXPIRING SOON</Badge>;
+      return <Badge variant="outline" className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 gap-1 text-[10px] font-bold"><AlertCircle className="w-3 h-3"/> EXPIRING SOON</Badge>;
     }
     return null;
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-end">
-        <div>
-          <h1 className="text-2xl font-semibold text-zinc-100 tracking-tight">Drivers & Safety Profiles</h1>
-          <p className="text-sm text-zinc-400 mt-1">View the fleet driver directory and active statuses.</p>
-        </div>
+    <div className="space-y-8 max-w-[1400px] mx-auto font-sans pb-12">
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Drivers</h1>
       </div>
 
-      <div className="flex gap-4 items-center bg-[#18181b] p-4 rounded-lg border border-zinc-800">
+      <div className="flex flex-wrap gap-3 items-center">
         <Input 
-          placeholder="Search name or license..." 
+          placeholder="Search name or license number..." 
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-64 bg-zinc-900 border-zinc-700 text-zinc-100 placeholder:text-zinc-500"
+          className="max-w-sm bg-white dark:bg-[#121212] border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-xl h-10 text-xs font-semibold"
         />
         
         <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v || "all")}>
-          <SelectTrigger className="w-40 bg-zinc-900 border-zinc-700 text-zinc-100">
-            <SelectValue placeholder="Status" />
+          <SelectTrigger className="w-[180px] bg-white dark:bg-[#121212] border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-xl h-10 text-xs font-semibold">
+            <SelectValue placeholder="Status: All" />
           </SelectTrigger>
-          <SelectContent className="bg-zinc-900 border-zinc-800 text-zinc-100">
-            <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="AVAILABLE">Available</SelectItem>
-            <SelectItem value="ON_TRIP">On Trip</SelectItem>
-            <SelectItem value="OFF_DUTY">Off Duty</SelectItem>
-            <SelectItem value="SUSPENDED">Suspended</SelectItem>
+          <SelectContent className="bg-white dark:bg-[#181818] border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-2xl">
+            <SelectItem value="all" className="text-xs font-semibold">All Statuses</SelectItem>
+            <SelectItem value="AVAILABLE" className="text-xs font-semibold">Available</SelectItem>
+            <SelectItem value="ON_TRIP" className="text-xs font-semibold">On Trip</SelectItem>
+            <SelectItem value="OFF_DUTY" className="text-xs font-semibold">Off Duty</SelectItem>
+            <SelectItem value="SUSPENDED" className="text-xs font-semibold">Suspended</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      <div className="rounded-lg border border-zinc-800 bg-[#18181b] overflow-hidden">
-        <Table>
-          <TableHeader className="bg-zinc-900/50">
-            <TableRow className="border-zinc-800 hover:bg-transparent">
-              <TableHead className="text-zinc-400 text-xs font-semibold tracking-wider uppercase">NAME</TableHead>
-              <TableHead className="text-zinc-400 text-xs font-semibold tracking-wider uppercase">LICENSE</TableHead>
-              <TableHead className="text-zinc-400 text-xs font-semibold tracking-wider uppercase">EXPIRY</TableHead>
-              <TableHead className="text-zinc-400 text-xs font-semibold tracking-wider uppercase">SAFETY SCORE</TableHead>
-              <TableHead className="text-zinc-400 text-xs font-semibold tracking-wider uppercase text-right">STATUS</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              <TableRow className="border-zinc-800">
-                <TableCell colSpan={5} className="text-center py-8 text-zinc-500">Loading drivers...</TableCell>
+      <div className="rounded-3xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#121212] shadow-xs overflow-hidden">
+        {loading ? (
+          <LoadingState message="Loading drivers..." className="py-20" />
+        ) : drivers.length === 0 ? (
+          <div className="p-16 text-center text-xs font-semibold text-gray-500 dark:text-gray-400">No drivers found.</div>
+        ) : (
+          <Table>
+            <TableHeader className="bg-gray-50/50 dark:bg-white/[0.02]">
+              <TableRow className="border-b border-gray-100 dark:border-white/[0.06] hover:bg-transparent">
+                <TableHead className="text-xs font-bold text-gray-500 dark:text-gray-400 pl-6">Driver Name</TableHead>
+                <TableHead className="text-xs font-bold text-gray-500 dark:text-gray-400">License Number</TableHead>
+                <TableHead className="text-xs font-bold text-gray-500 dark:text-gray-400">Category & Expiry</TableHead>
+                <TableHead className="text-xs font-bold text-gray-500 dark:text-gray-400">Contact</TableHead>
+                <TableHead className="text-xs font-bold text-gray-500 dark:text-gray-400">Safety Score</TableHead>
+                <TableHead className="text-xs font-bold text-gray-500 dark:text-gray-400 pr-6">Status</TableHead>
               </TableRow>
-            ) : drivers.length === 0 ? (
-              <TableRow className="border-zinc-800">
-                <TableCell colSpan={5} className="text-center py-8 text-zinc-500">No drivers found.</TableCell>
-              </TableRow>
-            ) : (
-              drivers.map((d) => (
-                <TableRow key={d.id} className="border-zinc-800 hover:bg-zinc-800/50 transition-colors">
-                  <TableCell className="font-medium text-zinc-200">
+            </TableHeader>
+            <TableBody>
+              {drivers.map((d) => (
+                <TableRow key={d.id} className="border-b border-gray-100 dark:border-white/[0.05] hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors">
+                  <TableCell className="font-bold text-xs text-gray-900 dark:text-white pl-6">{d.name}</TableCell>
+                  <TableCell className="text-xs font-semibold text-gray-700 dark:text-gray-300">{d.license_number}</TableCell>
+                  <TableCell className="text-xs font-semibold text-gray-700 dark:text-gray-300">
                     <div className="flex items-center gap-2">
-                      {d.name}
+                      <Badge variant="outline" className="text-[10px]">{d.license_category}</Badge>
+                      <span>{new Date(d.license_expiry_date).toLocaleDateString()}</span>
                       {getLicenseStatus(d.license_expiry_date)}
                     </div>
                   </TableCell>
-                  <TableCell className="text-zinc-400">
-                    <div>{d.license_number}</div>
-                    <div className="text-xs text-zinc-500">{d.license_category}</div>
+                  <TableCell className="text-xs font-semibold text-gray-700 dark:text-gray-300">{d.contact_number}</TableCell>
+                  <TableCell className="text-xs font-bold text-gray-900 dark:text-white">
+                    {d.safety_score !== null ? `${d.safety_score}/100` : '--'}
                   </TableCell>
-                  <TableCell className="text-zinc-400">{d.license_expiry_date}</TableCell>
-                  <TableCell className="text-zinc-400">
-                    {d.safety_score !== null ? `${d.safety_score}/100` : 'N/A'}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Badge variant="outline" className={getStatusColor(d.status)}>
-                      {d.status.replace('_', ' ')}
-                    </Badge>
+                  <TableCell className="pr-6">
+                    {getStatusBadge(d.status)}
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ))}
+            </TableBody>
+          </Table>
+        )}
       </div>
     </div>
   );
