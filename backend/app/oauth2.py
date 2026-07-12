@@ -9,6 +9,7 @@ from core.settings import settings
 from db.database import get_db
 from db import models
 from app import schemas
+from app.enums import UserRole
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login")
 
@@ -69,15 +70,22 @@ def get_current_active_user(current_user: models.User = Depends(get_current_user
     return current_user
 
 
-def require_roles(*allowed_roles: str):
+def require_roles(*allowed_roles: UserRole):
     """
     RBAC Dependency: Verifies that the authenticated user possesses one of the allowed roles.
+
+    Usage:
+        Depends(require_roles(UserRole.FLEET_MANAGER))
+        Depends(require_roles(UserRole.FLEET_MANAGER, UserRole.DISPATCHER))
     """
     def role_checker(current_user: models.User = Depends(get_current_active_user)) -> models.User:
-        if current_user.role not in allowed_roles and current_user.role != "ADMIN":
+        # Convert enum values to strings for comparison with the DB string column
+        allowed_values = {r.value if hasattr(r, 'value') else r for r in allowed_roles}
+        if current_user.role not in allowed_values:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Access forbidden: requires one of roles {allowed_roles}, but current role is '{current_user.role}'"
+                detail=f"Access forbidden: requires one of roles {list(allowed_values)}, but current role is '{current_user.role}'"
             )
         return current_user
     return role_checker
+
