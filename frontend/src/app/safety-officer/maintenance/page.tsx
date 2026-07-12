@@ -39,6 +39,12 @@ export default function MaintenanceListPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 10;
+  
+  useEffect(() => {
+    setPage(1);
+  }, [search, statusFilter]);
   
   // Confirmation Dialog States
   const [activeMaint, setActiveMaint] = useState<Maintenance | null>(null);
@@ -119,6 +125,20 @@ export default function MaintenanceListPage() {
     setErrorMsg(null);
   };
 
+  const filteredMaintenances = maintenances.filter(m => {
+    if (statusFilter !== 'all' && m.status !== statusFilter) return false;
+    if (search) {
+      const q = search.toLowerCase();
+      const matchReg = m.vehicle?.registration_number?.toLowerCase().includes(q);
+      const matchService = m.service_type.toLowerCase().includes(q);
+      return matchReg || matchService;
+    }
+    return true;
+  });
+
+  const totalPages = Math.ceil(filteredMaintenances.length / itemsPerPage);
+  const paginatedMaintenances = filteredMaintenances.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+
   return (
     <div className="space-y-6 font-sans max-w-[1040px] mx-auto">
       {/* Title & Actions */}
@@ -185,25 +205,14 @@ export default function MaintenanceListPage() {
                   <LoadingState message="Loading maintenance logs..." className="py-16 min-h-[220px]" />
                 </TableCell>
               </TableRow>
-            ) : maintenances.length === 0 ? (
+            ) : filteredMaintenances.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-10 text-gray-400 dark:text-gray-500">
                   No maintenance records found.
                 </TableCell>
               </TableRow>
             ) : (
-              maintenances
-                .filter(m => {
-                  if (statusFilter !== 'all' && m.status !== statusFilter) return false;
-                  if (search) {
-                    const q = search.toLowerCase();
-                    const matchReg = m.vehicle?.registration_number?.toLowerCase().includes(q);
-                    const matchService = m.service_type.toLowerCase().includes(q);
-                    return matchReg || matchService;
-                  }
-                  return true;
-                })
-                .map((m) => (
+              paginatedMaintenances.map((m) => (
                   <TableRow key={m.id} className="hover:bg-gray-50/70 dark:hover:bg-white/[0.02] transition-colors">
                     <TableCell className="font-mono text-gray-500 dark:text-gray-400 py-3.5 px-6">
                       MNT-{String(m.id).padStart(4, '0')}
@@ -268,6 +277,28 @@ export default function MaintenanceListPage() {
           </TableBody>
         </Table>
         </div>
+
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 dark:border-white/[0.06] bg-gray-50/50 dark:bg-[#161616]">
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="text-xs font-semibold px-4 py-2 rounded-xl border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-white/5 disabled:opacity-50 transition-colors"
+            >
+              Previous
+            </button>
+            <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+              Page {page} of {totalPages}
+            </span>
+            <button
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="text-xs font-semibold px-4 py-2 rounded-xl border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-white/5 disabled:opacity-50 transition-colors"
+            >
+              Next
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Confirmation Modal */}

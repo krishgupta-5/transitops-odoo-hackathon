@@ -24,6 +24,12 @@ export default function DriverSafetyPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [validityFilter, setValidityFilter] = useState("ALL");
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 10;
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, validityFilter]);
 
   useEffect(() => {
     async function fetchDrivers() {
@@ -100,6 +106,9 @@ export default function DriverSafetyPage() {
     return true;
   });
 
+  const totalPages = Math.ceil(filteredDrivers.length / itemsPerPage);
+  const paginatedDrivers = filteredDrivers.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+
   return (
     <div className="space-y-6 font-sans max-w-[1040px] mx-auto">
       {/* Page Header */}
@@ -163,7 +172,7 @@ export default function DriverSafetyPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredDrivers.map((d) => {
+              paginatedDrivers.map((d) => {
                 const classification = getLicenseClassification(d.license_expiry_date);
                 const score = d.safety_score ?? 100;
                 return (
@@ -228,6 +237,28 @@ export default function DriverSafetyPage() {
           </TableBody>
         </Table>
         </div>
+
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 dark:border-white/[0.06] bg-gray-50/50 dark:bg-[#161616]">
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="text-xs font-semibold px-4 py-2 rounded-xl border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-white/5 disabled:opacity-50 transition-colors"
+            >
+              Previous
+            </button>
+            <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+              Page {page} of {totalPages}
+            </span>
+            <button
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="text-xs font-semibold px-4 py-2 rounded-xl border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-white/5 disabled:opacity-50 transition-colors"
+            >
+              Next
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
