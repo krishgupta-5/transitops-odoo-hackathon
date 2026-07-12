@@ -3,8 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { apiClient } from "@/lib/api";
-import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -15,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { LoadingState } from "@/components/ui/LoadingState";
 
 type Vehicle = {
   id: number;
@@ -51,48 +50,78 @@ export default function FleetVehiclesPage() {
   };
 
   useEffect(() => {
-    // Debounce search
     const delay = setTimeout(() => {
       fetchVehicles();
     }, 300);
     return () => clearTimeout(delay);
   }, [search, statusFilter, typeFilter]);
 
-  const getStatusColor = (status: string) => {
+  const getVehicleStatusStyle = (status: string) => {
     switch (status) {
-      case 'AVAILABLE': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
-      case 'ON_TRIP': return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
-      case 'IN_SHOP': return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-      case 'RETIRED': return 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20';
-      default: return 'bg-zinc-800 text-zinc-300';
+      case 'AVAILABLE':
+        return {
+          backgroundColor: 'rgba(16, 185, 129, 0.15)',
+          color: '#10B981',
+          borderColor: 'rgba(16, 185, 129, 0.4)',
+        };
+      case 'ON_TRIP':
+        return {
+          backgroundColor: 'rgba(59, 130, 246, 0.15)',
+          color: '#3B82F6',
+          borderColor: 'rgba(59, 130, 246, 0.4)',
+        };
+      case 'IN_SHOP':
+        return {
+          backgroundColor: 'rgba(245, 158, 11, 0.15)',
+          color: '#F59E0B',
+          borderColor: 'rgba(245, 158, 11, 0.4)',
+        };
+      case 'RETIRED':
+        return {
+          backgroundColor: 'rgba(156, 163, 175, 0.15)',
+          color: '#9CA3AF',
+          borderColor: 'rgba(156, 163, 175, 0.4)',
+        };
+      default:
+        return {
+          backgroundColor: 'rgba(156, 163, 175, 0.15)',
+          color: '#9CA3AF',
+          borderColor: 'rgba(156, 163, 175, 0.4)',
+        };
     }
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-end">
+    <div className="space-y-6 font-sans max-w-[1040px] mx-auto">
+      {/* Title & Action */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-zinc-100 tracking-tight">Vehicles</h1>
-          <p className="text-sm text-zinc-400 mt-1">Manage the fleet vehicle registry.</p>
+          <h1 className="text-xl font-semibold tracking-tight text-gray-900 dark:text-white">
+            Vehicles
+          </h1>
         </div>
-        <Link href="/fleet-manager/vehicles/create" className={buttonVariants({ className: "bg-purple-600 hover:bg-purple-700 text-white" })}>
-          Add Vehicle
+        <Link
+          href="/fleet-manager/vehicles/create"
+          className="bg-black dark:bg-white text-white dark:text-black text-xs font-semibold px-4 py-2 rounded-xl hover:opacity-85 transition-opacity"
+        >
+          + Add Vehicle
         </Link>
       </div>
 
-      <div className="flex gap-4 items-center bg-[#18181b] p-4 rounded-lg border border-zinc-800">
+      {/* Filter Bar */}
+      <div className="flex flex-wrap gap-3 items-center">
         <Input 
-          placeholder="Search registration or name..." 
+          placeholder="Search vehicles..." 
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-64 bg-zinc-900 border-zinc-700 text-zinc-100 placeholder:text-zinc-500"
+          className="w-64 bg-transparent border-gray-200 dark:border-white/10 text-gray-900 dark:text-white placeholder:text-gray-400 font-mono text-xs h-9 rounded-xl focus-visible:ring-1 focus-visible:ring-gray-400"
         />
         
         <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v || "all")}>
-          <SelectTrigger className="w-40 bg-zinc-900 border-zinc-700 text-zinc-100">
+          <SelectTrigger className="w-44 bg-transparent border-gray-200 dark:border-white/10 text-gray-900 dark:text-white font-mono text-xs rounded-xl">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
-          <SelectContent className="bg-zinc-900 border-zinc-800 text-zinc-100">
+          <SelectContent className="bg-white dark:bg-[#0F0F0F] border-gray-200 dark:border-gray-800 font-mono text-xs rounded-xl">
             <SelectItem value="all">All Statuses</SelectItem>
             <SelectItem value="AVAILABLE">Available</SelectItem>
             <SelectItem value="ON_TRIP">On Trip</SelectItem>
@@ -102,44 +131,53 @@ export default function FleetVehiclesPage() {
         </Select>
       </div>
 
-      <div className="rounded-lg border border-zinc-800 bg-[#18181b] overflow-hidden">
+      {/* Vehicles Table Container */}
+      <div className="border border-gray-200/80 dark:border-white/[0.08] rounded-xl bg-white dark:bg-[#0F0F0F] overflow-hidden">
         <Table>
-          <TableHeader className="bg-zinc-900/50">
-            <TableRow className="border-zinc-800 hover:bg-transparent">
-              <TableHead className="text-zinc-400 text-xs font-semibold tracking-wider uppercase">REGISTRATION</TableHead>
-              <TableHead className="text-zinc-400 text-xs font-semibold tracking-wider uppercase">MODEL</TableHead>
-              <TableHead className="text-zinc-400 text-xs font-semibold tracking-wider uppercase">TYPE / CAP</TableHead>
-              <TableHead className="text-zinc-400 text-xs font-semibold tracking-wider uppercase">ODOMETER</TableHead>
-              <TableHead className="text-zinc-400 text-xs font-semibold tracking-wider uppercase">STATUS</TableHead>
-              <TableHead className="text-zinc-400 text-xs font-semibold tracking-wider uppercase text-right">ACTIONS</TableHead>
+          <TableHeader className="bg-gray-50/50 dark:bg-white/[0.02] border-b border-gray-100 dark:border-white/[0.06]">
+            <TableRow className="border-0 hover:bg-transparent">
+              <TableHead className="text-gray-400 text-[11px] font-semibold tracking-wider uppercase">REGISTRATION</TableHead>
+              <TableHead className="text-gray-400 text-[11px] font-semibold tracking-wider uppercase">MODEL</TableHead>
+              <TableHead className="text-gray-400 text-[11px] font-semibold tracking-wider uppercase">TYPE / CAP</TableHead>
+              <TableHead className="text-gray-400 text-[11px] font-semibold tracking-wider uppercase">ODOMETER</TableHead>
+              <TableHead className="text-gray-400 text-[11px] font-semibold tracking-wider uppercase">STATUS</TableHead>
+              <TableHead className="text-gray-400 text-[11px] font-semibold tracking-wider uppercase text-right">ACTIONS</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow className="border-zinc-800">
-                <TableCell colSpan={6} className="text-center py-8 text-zinc-500">Loading vehicles...</TableCell>
+              <TableRow className="border-0">
+                <TableCell colSpan={6} className="py-0">
+                  <LoadingState message="Loading vehicles..." className="py-16 min-h-[220px]" />
+                </TableCell>
               </TableRow>
             ) : vehicles.length === 0 ? (
-              <TableRow className="border-zinc-800">
-                <TableCell colSpan={6} className="text-center py-8 text-zinc-500">No vehicles found.</TableCell>
+              <TableRow className="border-0">
+                <TableCell colSpan={6} className="text-center py-10 text-gray-400 text-xs">No vehicles found.</TableCell>
               </TableRow>
             ) : (
               vehicles.map((v) => (
-                <TableRow key={v.id} className="border-zinc-800 hover:bg-zinc-800/50 transition-colors">
-                  <TableCell className="font-medium text-zinc-200">{v.registration_number}</TableCell>
-                  <TableCell className="text-zinc-400">{v.name}</TableCell>
-                  <TableCell className="text-zinc-400">
+                <TableRow key={v.id} className="border-b border-gray-100 dark:border-white/[0.05] hover:bg-gray-50/60 dark:hover:bg-white/[0.02] transition-colors">
+                  <TableCell className="font-semibold text-gray-900 dark:text-white">{v.registration_number}</TableCell>
+                  <TableCell className="text-gray-600 dark:text-gray-300">{v.name}</TableCell>
+                  <TableCell className="text-gray-600 dark:text-gray-300">
                     <div>{v.vehicle_type}</div>
-                    <div className="text-xs text-zinc-500">{v.max_load_capacity} kg</div>
+                    <div className="text-[11px] text-gray-400">{v.max_load_capacity} kg</div>
                   </TableCell>
-                  <TableCell className="text-zinc-400">{v.odometer} km</TableCell>
+                  <TableCell className="text-gray-600 dark:text-gray-300">{v.odometer} km</TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={getStatusColor(v.status)}>
+                    <span
+                      style={getVehicleStatusStyle(v.status)}
+                      className="text-[10px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-full"
+                    >
                       {v.status.replace('_', ' ')}
-                    </Badge>
+                    </span>
                   </TableCell>
-                  <TableCell className="text-right space-x-2">
-                    <Link href={`/fleet-manager/vehicles/${v.id}`} className={buttonVariants({ variant: "outline", size: "sm", className: "bg-transparent border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white" })}>
+                  <TableCell className="text-right">
+                    <Link
+                      href={`/fleet-manager/vehicles/${v.id}`}
+                      className="text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors"
+                    >
                       View
                     </Link>
                   </TableCell>

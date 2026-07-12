@@ -2,87 +2,91 @@
 
 import { ReactNode, useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Input } from "@/components/ui/input";
 import { apiClient } from "@/lib/api";
+import { Sidebar, DEFAULT_FLEET_NAV_ITEMS } from "@/components/Sidebar";
+
+interface UserProfile {
+  name?: string;
+  role?: string;
+}
 
 export default function FleetManagerLayout({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
-  const [user, setUser] = useState<{ name: string; role: string } | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
+
+    const verifySession = () => {
+      const token = localStorage.getItem('access_token');
+      if (!token) {
+        window.location.href = '/login';
+        return false;
+      }
+      return true;
+    };
+
+    if (!verifySession()) return;
+
+    window.addEventListener('storage', verifySession);
+    window.addEventListener('focus', verifySession);
+
     async function fetchUser() {
       try {
         const data = await apiClient('/auth/me');
-        setUser(data);
-      } catch (e) {
-        // Handle unauthenticated state in apiClient which redirects to /login
+        if (isMounted && data) {
+          setUser(data);
+        }
+      } catch {
+        localStorage.removeItem('access_token');
+        window.location.href = '/login';
       }
     }
     fetchUser();
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener('storage', verifySession);
+      window.removeEventListener('focus', verifySession);
+    };
   }, []);
 
-  const navItems = [
-    { name: 'Dashboard', href: '/fleet-manager' },
-    { name: 'Vehicles', href: '/fleet-manager/vehicles' },
-    { name: 'Drivers', href: '/fleet-manager/drivers' },
-  ];
+  const displayName = user?.name || 'Demo Fleet Manager';
+  const avatarInitials = user?.name ? user.name.substring(0, 2).toUpperCase() : 'FM';
 
   return (
-    <div className="flex h-screen bg-[#111111] text-zinc-100 overflow-hidden font-sans">
-      {/* Sidebar */}
-      <aside className="w-64 border-r border-zinc-800 flex flex-col">
-        <div className="p-6">
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-100 font-serif italic">TransitOps</h1>
-        </div>
-        <nav className="flex-1 px-4 py-4 space-y-2">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href || (item.href !== '/fleet-manager' && pathname.startsWith(item.href));
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`block px-4 py-2.5 rounded-lg transition-colors ${
-                  isActive
-                    ? 'border border-orange-500/50 bg-orange-500/10 text-orange-400 font-medium'
-                    : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/50'
-                }`}
-              >
-                {item.name}
-              </Link>
-            );
-          })}
-        </nav>
-      </aside>
+    <div className="flex h-screen bg-[#F4F4F5] dark:bg-[#070707] text-gray-900 dark:text-gray-100 overflow-hidden font-sans p-3 gap-3 transition-colors">
+      {/* Floating Sidebar Card */}
+      <Sidebar
+        navItems={DEFAULT_FLEET_NAV_ITEMS}
+        roleName="Fleet Manager"
+        user={user}
+      />
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Header */}
-        <header className="h-16 border-b border-zinc-800 flex items-center justify-between px-8 bg-[#111111]">
-          <div className="w-96">
-            <Input 
-              placeholder="Search fleet..." 
-              className="bg-zinc-900/50 border-zinc-700 text-zinc-100 placeholder:text-zinc-500 h-9 rounded-md focus-visible:ring-zinc-600"
-            />
+      {/* Floating Main Content Card */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden rounded-2xl border border-gray-200/80 dark:border-white/[0.08] bg-white dark:bg-[#0F0F0F] shadow-sm">
+        {/* Sleek Minimal Header */}
+        <header className="h-14 border-b border-gray-100 dark:border-white/[0.06] flex items-center justify-between px-6 shrink-0">
+          <div className="text-xs font-semibold tracking-wide text-gray-400 dark:text-gray-500">
+            Fleet Operations Portal
           </div>
-          <div className="flex items-center gap-4">
-            <span className="text-sm font-medium text-zinc-300">{user?.name || 'Loading...'}</span>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-purple-400 border border-purple-400/30 bg-purple-400/10 px-2 py-1 rounded">
-                {user?.role === 'FLEET_MANAGER' ? 'Fleet Manager' : user?.role || '...'}
-              </span>
-              <Avatar className="h-8 w-8 bg-zinc-700">
-                <AvatarFallback className="text-xs bg-zinc-700 text-zinc-200">
-                  {user?.name ? user.name.substring(0, 2).toUpperCase() : 'U'}
-                </AvatarFallback>
-              </Avatar>
-            </div>
-          </div>
+          <Link
+            href="/fleet-manager/profile"
+            className="flex items-center gap-2.5 hover:opacity-80 transition-opacity cursor-pointer group"
+          >
+            <span suppressHydrationWarning className="text-xs font-semibold text-gray-700 dark:text-gray-300 group-hover:text-black dark:group-hover:text-white transition-colors">
+              {displayName}
+            </span>
+            <Avatar className="h-7 w-7 rounded-full border-0 bg-transparent">
+              <AvatarFallback suppressHydrationWarning className="bg-gray-100 dark:bg-white/10 text-[11px] font-semibold text-gray-700 dark:text-gray-200 rounded-full group-hover:bg-black group-hover:text-white dark:group-hover:bg-white dark:group-hover:text-black transition-colors">
+                {avatarInitials}
+              </AvatarFallback>
+            </Avatar>
+          </Link>
         </header>
 
-        {/* Page Content */}
-        <main className="flex-1 overflow-auto p-8 relative">
+        {/* Clean Page Content */}
+        <main className="flex-1 overflow-auto p-6 md:p-8 relative">
           {children}
         </main>
       </div>

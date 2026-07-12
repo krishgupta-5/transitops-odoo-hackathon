@@ -1,6 +1,7 @@
 import { ArrowRight, Shield, Truck, Radio, BarChart3, Zap, Globe, Lock, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
+import { GetStartedButton } from '@/components/GetStartedButton';
 
 const FEATURES = [
   {
@@ -62,12 +63,7 @@ export default function Home() {
 
           {/* CTA Buttons */}
           <div className="flex items-center gap-4">
-            <Link
-              href="/login"
-              className="bg-black dark:bg-white text-white dark:text-black text-[14px] font-semibold px-7 py-3.5 flex items-center gap-2 hover:bg-gray-800 dark:hover:bg-gray-200 transition-colors"
-            >
-              Get Started <ArrowRight size={16} />
-            </Link>
+            <GetStartedButton />
             <a
               href="#features"
               className="border border-gray-300 dark:border-gray-700 text-[14px] font-semibold px-7 py-3.5 text-gray-700 dark:text-gray-300 hover:border-gray-900 dark:hover:border-white hover:text-black dark:hover:text-white transition-colors"

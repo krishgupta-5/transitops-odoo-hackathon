@@ -77,21 +77,21 @@ export default function CreateDriverPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-zinc-400 uppercase">Full Name</label>
-                <Input 
+                <Input
                   required
                   placeholder="e.g. John Doe"
                   value={formData.name}
-                  onChange={e => setFormData({...formData, name: e.target.value})}
+                  onChange={e => setFormData({ ...formData, name: e.target.value })}
                   className="bg-zinc-900 border-zinc-700 text-zinc-100"
                 />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-zinc-400 uppercase">Contact Number</label>
-                <Input 
+                <Input
                   required
                   placeholder="e.g. +1 234 567 8900"
                   value={formData.contact_number}
-                  onChange={e => setFormData({...formData, contact_number: e.target.value})}
+                  onChange={e => setFormData({ ...formData, contact_number: e.target.value })}
                   className="bg-zinc-900 border-zinc-700 text-zinc-100"
                 />
               </div>
@@ -100,17 +100,17 @@ export default function CreateDriverPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-zinc-400 uppercase">License Number</label>
-                <Input 
+                <Input
                   required
                   placeholder="e.g. D123456789"
                   value={formData.license_number}
-                  onChange={e => setFormData({...formData, license_number: e.target.value})}
+                  onChange={e => setFormData({ ...formData, license_number: e.target.value })}
                   className="bg-zinc-900 border-zinc-700 text-zinc-100"
                 />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-zinc-400 uppercase">License Category</label>
-                <Select required value={formData.license_category} onValueChange={(v) => setFormData({...formData, license_category: v || ""})}>
+                <Select required value={formData.license_category} onValueChange={(v) => setFormData({ ...formData, license_category: v || "" })}>
                   <SelectTrigger className="bg-zinc-900 border-zinc-700 text-zinc-100">
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
@@ -126,23 +126,23 @@ export default function CreateDriverPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-zinc-400 uppercase">License Expiry Date</label>
-                <Input 
+                <Input
                   required
                   type="date"
                   value={formData.license_expiry_date}
-                  onChange={e => setFormData({...formData, license_expiry_date: e.target.value})}
+                  onChange={e => setFormData({ ...formData, license_expiry_date: e.target.value })}
                   className="bg-zinc-900 border-zinc-700 text-zinc-100 dark:[color-scheme:dark]"
                 />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-zinc-400 uppercase">Initial Safety Score (0-100)</label>
-                <Input 
+                <Input
                   type="number"
                   min="0"
                   max="100"
                   step="0.1"
                   value={formData.safety_score}
-                  onChange={e => setFormData({...formData, safety_score: e.target.value})}
+                  onChange={e => setFormData({ ...formData, safety_score: e.target.value })}
                   className="bg-zinc-900 border-zinc-700 text-zinc-100"
                   placeholder="Leave empty if N/A"
                 />
