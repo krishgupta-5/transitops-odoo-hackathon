@@ -3,6 +3,7 @@ from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 
 from db.database import Base
+from app.enums import UserRole
 
 
 class User(Base):
@@ -12,7 +13,7 @@ class User(Base):
     name = Column(String(255), nullable=True)
     email = Column(String(255), unique=True, index=True, nullable=False)
     hashed_password = Column(String(255), nullable=False)
-    role = Column(String(50), default="DISPATCHER", nullable=False)
+    role = Column(String(50), default=UserRole.DISPATCHER.value, nullable=False)
 
     # Optional Profile Fields
     phone = Column(String(50), nullable=True)

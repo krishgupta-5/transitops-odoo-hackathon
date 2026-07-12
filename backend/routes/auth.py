@@ -5,45 +5,30 @@ from sqlalchemy.orm import Session
 from sqlalchemy import cast, String
 
 from app import schemas, utils, oauth2
+from app.enums import UserRole
 from db import models
 from db.database import get_db
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
-ROLE_MAPPING = {
-    "fleet manager": "FLEET_MANAGER",
-    "fleet_manager": "FLEET_MANAGER",
-    "dispatcher": "DISPATCHER",
-    "safety officer": "SAFETY_OFFICER",
-    "safety_officer": "SAFETY_OFFICER",
-    "financial analyst": "FINANCIAL_ANALYST",
-    "financial_analyst": "FINANCIAL_ANALYST",
-    "admin": "ADMIN",
-    "user": "CUSTOMER",
-    "customer": "CUSTOMER",
-    "driver": "DELIVERY_AGENT",
-    "delivery_agent": "DELIVERY_AGENT",
-}
-
 
 @router.post("/register", response_model=schemas.UserOut, status_code=status.HTTP_201_CREATED)
 def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    requested_role = ROLE_MAPPING.get((user.role or "dispatcher").lower(), "DISPATCHER")
-
+    # Check global email uniqueness
     existing_user = db.query(models.User).filter(
-        models.User.email == user.email,
-        models.User.role == requested_role
+        models.User.email == user.email
     ).first()
     if existing_user:
-        raise HTTPException(status_code=400, detail="Email already registered for this role")
+        raise HTTPException(status_code=400, detail="Email already registered")
 
     hashed_pwd = utils.hash_password(user.password)
 
+    # All public registrations receive DISPATCHER role — not client-selectable
     new_user = models.User(
         name=user.name,
         email=user.email,
         hashed_password=hashed_pwd,
-        role=requested_role,
+        role=UserRole.DISPATCHER.value,
         is_active=True,
     )
     db.add(new_user)
@@ -55,17 +40,10 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=schemas.Token)
 def login(user_credentials: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    requested_role_raw = user_credentials.scopes[0] if user_credentials.scopes else None
-    requested_role = ROLE_MAPPING.get(requested_role_raw.lower()) if requested_role_raw else None
-
-    # Find user by username or email
-    query = db.query(models.User).filter(
+    # Find user by username or email — no role selection
+    user = db.query(models.User).filter(
         (models.User.email == user_credentials.username) | (models.User.name == user_credentials.username)
-    )
-    if requested_role:
-        query = query.filter(models.User.role == requested_role)
-
-    user = query.first()
+    ).first()
 
     if not user:
         raise HTTPException(
@@ -98,11 +76,7 @@ def login(user_credentials: OAuth2PasswordRequestForm = Depends(), db: Session =
     user.failed_login_attempts = 0
     user.locked_until = None
 
-    if requested_role and user.role != requested_role:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Invalid role selected"
-        )
-
+    # Role comes from the database, not from the client
     token_data = {"user_id": str(user.id), "role": user.role}
     access_token = oauth2.create_access_token(data=token_data)
     refresh_token = oauth2.create_refresh_token(data=token_data)
@@ -140,9 +114,9 @@ def update_me(
         current_user.name = update_data.name
     if update_data.email is not None:
         if update_data.email != current_user.email:
+            # Global email uniqueness check
             existing = db.query(models.User).filter(
                 models.User.email == update_data.email,
-                models.User.role == current_user.role,
             ).first()
             if existing:
                 raise HTTPException(status_code=400, detail="Email already registered")

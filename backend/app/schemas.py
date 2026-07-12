@@ -2,12 +2,14 @@ from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel, EmailStr, ConfigDict
 
+from app.enums import UserRole
+
 
 class UserCreate(BaseModel):
+    """Public registration schema. Role is NOT accepted — all new users get DISPATCHER."""
     name: Optional[str] = None
     email: EmailStr
     password: str
-    role: Optional[str] = "DISPATCHER"
 
 
 class UserUpdate(BaseModel):
@@ -22,7 +24,7 @@ class UserOut(BaseModel):
     id: int
     name: Optional[str] = None
     email: str
-    role: str
+    role: UserRole
     phone: Optional[str] = None
     address: Optional[str] = None
     profile_picture: Optional[str] = None
@@ -40,7 +42,7 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     id: Optional[str] = None
-    role: Optional[str] = None
+    role: Optional[UserRole] = None
 
 
 class TokenRefresh(BaseModel):
