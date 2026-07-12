@@ -1,35 +1,71 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Grid3X3, AlertCircle, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { AlertCircle, CheckCircle2, ChevronDown, ArrowRight } from 'lucide-react';
 
 const API_BASE = 'http://127.0.0.1:8000/api/v1';
 
+interface RoleInfo {
+  role: string;
+  name: string;
+  demo_email: string;
+  demo_password: string;
+  route: string;
+  description: string;
+}
+
+const FALLBACK_ROLES: RoleInfo[] = [
+  { role: 'FLEET_MANAGER', name: 'Fleet Manager', demo_email: 'fleet@transitops.demo', demo_password: 'transitops2026', route: '/fleet-manager', description: 'Fleet & Maintenance management' },
+  { role: 'DISPATCHER', name: 'Dispatcher', demo_email: 'dispatcher@transitops.demo', demo_password: 'transitops2026', route: '/dispatcher', description: 'Live Dispatch & Routing' },
+  { role: 'SAFETY_OFFICER', name: 'Safety Officer', demo_email: 'safety@transitops.demo', demo_password: 'transitops2026', route: '/safety-officer', description: 'Safety & Compliance inspection' },
+  { role: 'FINANCIAL_ANALYST', name: 'Financial Analyst', demo_email: 'finance@transitops.demo', demo_password: 'transitops2026', route: '/financial-analyst', description: 'Financial & Fuel analytics' },
+];
+
+const ROLE_LABEL: Record<string, string> = {
+  FLEET_MANAGER: 'Fleet Manager',
+  DISPATCHER: 'Dispatcher',
+  SAFETY_OFFICER: 'Safety Officer',
+  FINANCIAL_ANALYST: 'Financial Analyst',
+};
+
 export default function LoginPage() {
+  const [roles, setRoles] = useState<RoleInfo[]>(FALLBACK_ROLES);
+  const [selectedRoleCode, setSelectedRoleCode] = useState<string>('');
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [user, setUser] = useState<{
-    name: string;
-    email: string;
-    role: string;
-    is_active: boolean;
-  } | null>(null);
-  const [tokens, setTokens] = useState<{
-    access_token: string;
-    refresh_token: string;
-  } | null>(null);
+
+  const [user, setUser] = useState<{ name: string; email: string; role: string } | null>(null);
+
+  useEffect(() => {
+    async function fetchRoles() {
+      try {
+        const res = await fetch(`${API_BASE}/auth/roles`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.roles && Array.isArray(data.roles)) setRoles(data.roles);
+        }
+      } catch {
+        // Fallback silently
+      }
+    }
+    fetchRoles();
+  }, []);
+
+  const handleRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedRoleCode(e.target.value);
+    setError(null);
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
     setUser(null);
-    setTokens(null);
 
     try {
-      // Login — sends form-urlencoded as OAuth2PasswordRequestForm expects
       const params = new URLSearchParams();
       params.append('username', email);
       params.append('password', password);
@@ -43,18 +79,14 @@ export default function LoginPage() {
       const loginData = await loginRes.json();
 
       if (!loginRes.ok) {
-        setError(loginData.detail || 'Login failed');
+        setError(loginData.detail || 'Wrong login/password');
         setIsLoading(false);
         return;
       }
 
-      setTokens(loginData);
-
-      // Store tokens for auth guard
       localStorage.setItem('access_token', loginData.access_token);
       localStorage.setItem('refresh_token', loginData.refresh_token);
 
-      // Fetch /auth/me to get full user profile
       const meRes = await fetch(`${API_BASE}/auth/me`, {
         headers: { Authorization: `Bearer ${loginData.access_token}` },
       });
@@ -63,174 +95,152 @@ export default function LoginPage() {
 
       if (meRes.ok) {
         setUser(meData);
-
-        // Redirect to role-based route after a short delay
         const roleRouteMap: Record<string, string> = {
           FLEET_MANAGER: '/fleet-manager',
           DISPATCHER: '/dispatcher',
           SAFETY_OFFICER: '/safety-officer',
           FINANCIAL_ANALYST: '/financial-analyst',
         };
-        const route = roleRouteMap[meData.role] || '/';
         setTimeout(() => {
-          window.location.href = route;
+          window.location.href = roleRouteMap[meData.role] || '/';
         }, 1200);
       }
     } catch {
-      setError('Cannot reach the backend. Is uvicorn running on port 8000?');
+      setError('Connection refused.');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen font-sans">
-      {/* Left Panel */}
-      <div className="hidden lg:flex lg:w-1/2 bg-[#cfd5dc] flex-col justify-between p-12 text-[#1a1a1a]">
-        <div>
-          <div className="flex items-center gap-3 mb-6">
-            <div className="text-[#a16222]">
-              <Grid3X3 size={48} strokeWidth={1.5} />
-            </div>
-            <div>
-              <h1 className="text-4xl font-bold tracking-tight text-gray-900">TransitOps</h1>
-              <p className="text-sm font-medium text-gray-600 mt-1">Smart Transport Operations Platform</p>
-            </div>
-          </div>
+    <div className="min-h-screen bg-[#FBFBFB] dark:bg-[#0A0A0A] text-gray-900 dark:text-gray-100 font-mono flex flex-col items-center transition-colors">
 
-          <div className="mt-24 max-w-md">
-            <h2 className="text-2xl font-semibold mb-6">One login, four roles:</h2>
-            <ul className="space-y-4 text-lg">
-              {['Fleet Manager', 'Dispatcher', 'Safety Officer', 'Financial Analyst'].map((roleItem) => (
-                <li key={roleItem} className="flex items-center gap-3">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#a16222]"></span>
-                  <span className="font-medium text-gray-800">{roleItem}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
+      {/* Structural Container matching landing page */}
+      <div className="w-full max-w-[1200px] min-h-screen border-x border-gray-200/80 dark:border-gray-800 bg-white dark:bg-[#0A0A0A] flex flex-col relative transition-colors">
 
-        <div className="text-xs font-semibold tracking-wider text-gray-500 uppercase">
-          TRANSITOPS © 2026 · RBAC ENABLED
-        </div>
-      </div>
+        {/* Centered Login Section */}
+        <div className="flex-1 flex flex-col items-center justify-center py-12 px-4">
 
-      {/* Right Panel */}
-      <div className="w-full lg:w-1/2 bg-[#141414] text-gray-100 flex flex-col justify-center px-8 sm:px-16 lg:px-24">
-        <div className="max-w-md w-full mx-auto relative">
-          
-          {/* Success State — shown after login */}
-          {user && (
-            <div className="absolute -right-4 top-0 translate-x-full hidden xl:block w-72 bg-[#0f1f0f] border border-green-900/50 rounded-lg p-4 shadow-xl">
-              <div className="text-xs text-gray-400 mb-2">Authenticated ✓</div>
-              <div className="space-y-1.5 text-sm text-green-400">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 size={14} className="shrink-0" />
-                  <span className="font-medium">{user.name}</span>
-                </div>
-                <div className="text-green-500/80 text-xs pl-5">{user.email}</div>
-                <div className="text-green-500/80 text-xs pl-5">Role: <span className="font-mono font-semibold text-green-400">{user.role}</span></div>
-                <div className="text-green-500/80 text-xs pl-5">Active: {user.is_active ? 'Yes' : 'No'}</div>
+          {/* Clean Flat Login Card */}
+          <div className="w-full max-w-[420px] bg-white dark:bg-[#0F0F0F] border border-gray-200 dark:border-gray-800 p-8 sm:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-colors">
+
+            <div className="mb-8 text-center">
+              <div className="inline-flex items-center justify-center mb-4">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="square" strokeLinejoin="miter" className="text-black dark:text-white">
+                  <path d="M12 2v20M17 5l-10 14M22 12H2M19 17L5 7" />
+                </svg>
               </div>
-            </div>
-          )}
-
-          {/* Error State Snippet — desktop */}
-          {error && !user && (
-            <div className="absolute -right-4 top-0 translate-x-full hidden xl:block w-64 bg-[#1e1313] border border-red-900/50 rounded-lg p-4 shadow-xl">
-              <div className="text-xs text-gray-400 mb-1">Error state</div>
-              <div className="flex gap-2 items-start text-red-500 text-sm">
-                <AlertCircle size={16} className="mt-0.5 shrink-0" />
-                <p className="leading-tight">{error}</p>
-              </div>
-            </div>
-          )}
-
-          <div className="mb-10">
-            <h2 className="text-3xl font-bold mb-2">Sign in to your account</h2>
-            <p className="text-gray-400 text-sm">Enter your credentials to continue</p>
-          </div>
-
-          {/* Mobile Error State */}
-          {error && !user && (
-            <div className="xl:hidden flex gap-2 items-start text-red-400 text-sm mb-6 bg-red-500/10 p-3 rounded-md border border-red-500/20">
-              <AlertCircle size={18} className="shrink-0" />
-              <p>{error}</p>
-            </div>
-          )}
-
-          {/* Mobile Success State */}
-          {user && (
-            <div className="xl:hidden flex gap-2 items-start text-green-400 text-sm mb-6 bg-green-500/10 p-3 rounded-md border border-green-500/20">
-              <CheckCircle2 size={18} className="shrink-0" />
-              <p>Logged in as <strong>{user.name}</strong> — Role: <span className="font-mono">{user.role}</span></p>
-            </div>
-          )}
-
-          <form onSubmit={handleLogin} className="space-y-5">
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Email</label>
-              <input 
-                type="email" 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="fleet@transitops.demo"
-                className="w-full bg-[#1a1a1a] border border-gray-800 rounded-md px-4 py-3 text-sm focus:outline-none focus:border-[#a16222] focus:ring-1 focus:ring-[#a16222] transition-colors"
-                required
-              />
+              <h1 className="text-2xl font-mono font-medium tracking-tight text-gray-900 dark:text-gray-100">Sign in to TransitOps</h1>
+              <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1.5 font-mono uppercase tracking-wider">Operational Access Portal</p>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Password</label>
-              <input 
-                type="password" 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full bg-[#1a1a1a] border border-gray-800 rounded-md px-4 py-3 text-sm focus:outline-none focus:border-[#a16222] focus:ring-1 focus:ring-[#a16222] transition-colors"
-                required
-              />
-            </div>
-
-            <div className="flex items-center justify-between pt-2">
-              <label className="flex items-center gap-2 cursor-pointer group">
-                <div className="relative flex items-center justify-center w-5 h-5 rounded border border-gray-700 bg-[#1a1a1a] group-hover:border-gray-500 transition-colors">
-                  <input type="checkbox" className="peer sr-only" />
-                  <svg className="w-3.5 h-3.5 text-[#a16222] opacity-0 peer-checked:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
+            {/* Success Banner */}
+            {user && (
+              <div className="mb-6 p-4 bg-gray-50 border border-gray-200 flex items-center gap-3 text-sm">
+                <CheckCircle2 size={18} className="text-black" />
+                <div className="flex-1">
+                  <p className="font-semibold text-black">Authentication successful</p>
+                  <p className="text-gray-500 text-xs mt-0.5">
+                    Routing to {ROLE_LABEL[user.role] || user.role}...
+                  </p>
                 </div>
-                <span className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors">Remember me</span>
-              </label>
-              
-              <a href="#" className="text-sm text-blue-500 hover:text-blue-400 transition-colors">Forgot password?</a>
-            </div>
+              </div>
+            )}
 
-            <button 
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-[#9f5e1f] hover:bg-[#8a511a] text-white font-medium py-3 rounded-md transition-colors mt-4 flex justify-center items-center h-12"
-            >
-              {isLoading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-              ) : (
-                'Sign In'
-              )}
-            </button>
-          </form>
+            {/* Error Banner */}
+            {error && !user && (
+              <div className="mb-6 p-4 bg-gray-50 border border-gray-200 flex items-center gap-3 text-sm text-gray-900">
+                <AlertCircle size={18} className="shrink-0 text-black" />
+                <span className="font-medium">{error}</span>
+              </div>
+            )}
 
-          <div className="mt-12 pt-8 border-t border-gray-800/50">
-            <p className="text-xs text-gray-500 mb-4">Access is scoped by role after login:</p>
-            <ul className="space-y-2 text-sm text-gray-400">
-              <li><span className="text-gray-300">• Fleet Manager</span> &rarr; Fleet, Maintenance</li>
-              <li><span className="text-gray-300">• Dispatcher</span> &rarr; Dashboard, Trips</li>
-              <li><span className="text-gray-300">• Safety Officer</span> &rarr; Drivers, Compliance</li>
-              <li><span className="text-gray-300">• Financial Analyst</span> &rarr; Fuel &amp; Expenses, Analytics</li>
-            </ul>
+            <form onSubmit={handleLogin} className="space-y-5">
+
+              {/* Role Dropdown */}
+              <div>
+                <label className="block text-[11px] font-mono font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">
+                  Operational Role
+                </label>
+                <div className="relative">
+                  <select
+                    value={selectedRoleCode}
+                    onChange={handleRoleChange}
+                    className="w-full bg-transparent border border-gray-300 dark:border-gray-700 rounded-none px-4 py-3 text-[14px] text-gray-900 dark:text-gray-100 appearance-none focus:outline-none focus:border-black dark:focus:border-white focus:ring-1 focus:ring-black dark:focus:ring-white transition-all cursor-pointer bg-white dark:bg-[#0F0F0F]"
+                  >
+                    <option value="" className="text-gray-500 dark:text-gray-400">Select your role</option>
+                    {roles.map((r) => (
+                      <option key={r.role} value={r.role}>
+                        {r.name}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500 dark:text-gray-400">
+                    <ChevronDown size={16} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Email Input */}
+              <div>
+                <label className="block text-[11px] font-mono font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">
+                  Work Email
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@transitops.demo"
+                  className="w-full bg-transparent border border-gray-300 dark:border-gray-700 rounded-none px-4 py-3 text-[14px] text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-black dark:focus:border-white focus:ring-1 focus:ring-black dark:focus:ring-white transition-all"
+                  required
+                />
+              </div>
+
+              {/* Password Input */}
+              <div>
+                <div className="flex justify-between items-center mb-1.5">
+                  <label className="block text-[11px] font-mono font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                    Password
+                  </label>
+                  <a href="#" className="text-[12px] text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white underline-offset-2 hover:underline transition-all">
+                    Reset
+                  </a>
+                </div>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full bg-transparent border border-gray-300 dark:border-gray-700 rounded-none px-4 py-3 text-[14px] text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-black dark:focus:border-white focus:ring-1 focus:ring-black dark:focus:ring-white transition-all"
+                  required
+                />
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full bg-black dark:bg-white text-white dark:text-black font-semibold rounded-none py-3.5 text-[14px] transition-all hover:bg-gray-800 dark:hover:bg-gray-200 active:scale-[0.99] mt-6 flex justify-center items-center gap-2 disabled:opacity-50 disabled:pointer-events-none"
+              >
+                {isLoading ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <span>Authenticate Now</span>
+                    <ArrowRight size={16} />
+                  </>
+                )}
+              </button>
+            </form>
           </div>
 
+          <div className="mt-8 text-center">
+            <p className="text-[11px] text-gray-400 font-mono uppercase tracking-widest">
+              © 2026 TransitOps. Secure Access Portal.
+            </p>
+          </div>
         </div>
+
       </div>
     </div>
   );

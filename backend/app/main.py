@@ -26,7 +26,13 @@ app.include_router(auth.router, prefix=settings.API_V1_STR)
 @app.on_event("startup")
 def on_startup():
     Base.metadata.create_all(bind=engine)
+    try:
+        from scripts.seed_demo_users import seed
+        seed()
+    except Exception as e:
+        print(f"Demo user seed error: {e}")
     print(f"Starting {settings.PROJECT_NAME}")
+
 
 
 @app.get("/")

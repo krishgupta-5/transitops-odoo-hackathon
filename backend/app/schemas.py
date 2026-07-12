@@ -6,10 +6,12 @@ from app.enums import UserRole
 
 
 class UserCreate(BaseModel):
-    """Public registration schema. Role is NOT accepted — all new users get DISPATCHER."""
+    """Registration schema with role selection matching backend enums."""
     name: Optional[str] = None
     email: EmailStr
     password: str
+    role: Optional[UserRole] = UserRole.DISPATCHER
+
 
 
 class UserUpdate(BaseModel):
