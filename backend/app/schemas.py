@@ -2,7 +2,7 @@ from datetime import datetime, date
 from typing import Optional
 from pydantic import BaseModel, EmailStr, ConfigDict, Field
 
-from app.enums import UserRole, TripStatus, ExpenseCategory
+from app.enums import UserRole, TripStatus, ExpenseCategory, MaintenanceStatus
 
 
 class UserCreate(BaseModel):
@@ -214,5 +214,37 @@ class ExpenseOut(BaseModel):
 
     vehicle: VehicleOut
     trip: Optional[TripOut] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+class MaintenanceCreate(BaseModel):
+    vehicle_id: int
+    service_type: str = Field(..., min_length=1)
+    service_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
+    cost: float = Field(..., ge=0)
+    description: Optional[str] = None
+
+
+class MaintenanceUpdate(BaseModel):
+    service_type: Optional[str] = Field(None, min_length=1)
+    service_date: Optional[str] = Field(None, pattern=r"^\d{4}-\d{2}-\d{2}$")
+    cost: Optional[float] = Field(None, ge=0)
+    description: Optional[str] = None
+
+
+class MaintenanceOut(BaseModel):
+    id: int
+    vehicle_id: int
+    service_type: str
+    service_date: str
+    cost: float
+    description: Optional[str] = None
+    status: str
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    cancelled_at: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime
+    vehicle: VehicleOut
 
     model_config = ConfigDict(from_attributes=True)

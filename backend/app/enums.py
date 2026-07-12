@@ -43,3 +43,9 @@ class ExpenseCategory(str, Enum):
     PERMIT = "PERMIT"
     PARKING = "PARKING"
     OTHER = "OTHER"
+
+class MaintenanceStatus(str, Enum):
+    SCHEDULED = "SCHEDULED"
+    IN_PROGRESS = "IN_PROGRESS"
+    COMPLETED = "COMPLETED"
+    CANCELLED = "CANCELLED"
