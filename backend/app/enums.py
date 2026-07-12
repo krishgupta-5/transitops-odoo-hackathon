@@ -34,3 +34,11 @@ class DriverStatus(str, Enum):
     ON_TRIP = "ON_TRIP"
     OFF_DUTY = "OFF_DUTY"
     SUSPENDED = "SUSPENDED"
+
+
+class MaintenanceStatus(str, Enum):
+    SCHEDULED = "SCHEDULED"
+    IN_PROGRESS = "IN_PROGRESS"
+    COMPLETED = "COMPLETED"
+    CANCELLED = "CANCELLED"
+
