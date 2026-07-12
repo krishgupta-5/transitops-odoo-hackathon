@@ -2,7 +2,7 @@ from datetime import datetime, date
 from typing import Optional
 from pydantic import BaseModel, EmailStr, ConfigDict, Field
 
-from app.enums import UserRole, TripStatus
+from app.enums import UserRole, TripStatus, ExpenseCategory
 
 
 class UserCreate(BaseModel):
@@ -155,5 +155,64 @@ class TripOut(BaseModel):
 
     vehicle: VehicleOut
     driver: DriverOut
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class FuelLogCreate(BaseModel):
+    vehicle_id: int
+    trip_id: int
+    liters: float = Field(..., gt=0)
+    cost: float = Field(..., ge=0)
+    fuel_date: date
+
+class FuelLogUpdate(BaseModel):
+    liters: Optional[float] = Field(None, gt=0)
+    cost: Optional[float] = Field(None, ge=0)
+    fuel_date: Optional[date] = None
+
+class FuelLogOut(BaseModel):
+    id: int
+    vehicle_id: int
+    trip_id: int
+    liters: float
+    cost: float
+    fuel_date: date
+    created_at: datetime
+    updated_at: datetime
+    
+    vehicle: VehicleOut
+    trip: TripOut
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ExpenseCreate(BaseModel):
+    vehicle_id: int
+    trip_id: Optional[int] = None
+    category: ExpenseCategory
+    amount: float = Field(..., ge=0)
+    expense_date: date
+    description: Optional[str] = None
+
+class ExpenseUpdate(BaseModel):
+    category: Optional[ExpenseCategory] = None
+    amount: Optional[float] = Field(None, ge=0)
+    expense_date: Optional[date] = None
+    description: Optional[str] = None
+
+class ExpenseOut(BaseModel):
+    id: int
+    vehicle_id: int
+    trip_id: Optional[int] = None
+    category: ExpenseCategory
+    amount: float
+    expense_date: date
+    description: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+    vehicle: VehicleOut
+    trip: Optional[TripOut] = None
 
     model_config = ConfigDict(from_attributes=True)
