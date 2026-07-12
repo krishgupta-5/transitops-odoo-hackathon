@@ -28,13 +28,11 @@ app.include_router(fuel_logs.router, prefix=settings.API_V1_STR)
 app.include_router(expenses.router, prefix=settings.API_V1_STR)
 app.include_router(analytics.router, prefix=settings.API_V1_STR)
 app.include_router(safety.router, prefix=settings.API_V1_STR)
-app.include_router(fuel_logs.router, prefix=settings.API_V1_STR)
-app.include_router(expenses.router, prefix=settings.API_V1_STR)
-app.include_router(analytics.router, prefix=settings.API_V1_STR)
 
 
 @app.on_event("startup")
 def on_startup():
+    import db.models
     Base.metadata.create_all(bind=engine)
     try:
         from scripts.seed_demo_users import seed

@@ -16,6 +16,7 @@ import {
   BarChart3,
   MapPin,
   Wrench,
+  ShieldAlert,
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { clearAuthSession } from '@/lib/auth';
@@ -60,6 +61,13 @@ export const DEFAULT_DISPATCHER_NAV_ITEMS: NavItem[] = [
   { name: 'Fuel & Expenses', href: '/dispatcher/fuel', icon: <Fuel size={18} /> },
   { name: 'Analytics', href: '/dispatcher/analytics', icon: <BarChart3 size={18} /> },
   { name: 'Profile Settings', href: '/dispatcher/profile', icon: <UserCog size={18} /> },
+];
+
+export const DEFAULT_SAFETY_NAV_ITEMS: NavItem[] = [
+  { name: 'Dashboard', href: '/safety-officer', icon: <LayoutDashboard size={18} /> },
+  { name: 'Maintenance', href: '/safety-officer/maintenance', icon: <Wrench size={18} /> },
+  { name: 'Driver Safety', href: '/safety-officer/drivers', icon: <ShieldAlert size={18} /> },
+  { name: 'Profile Settings', href: '/safety-officer/profile', icon: <UserCog size={18} /> },
 ];
 
 export function Sidebar({

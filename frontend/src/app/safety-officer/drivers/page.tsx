@@ -1,16 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Search, ShieldAlert, Award, Phone, Calendar, User, Activity } from 'lucide-react';
+import { Search, Phone, Activity } from 'lucide-react';
 import { apiClient } from '@/lib/api';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-
-// Calculations baseline dates: 2026-07-12
-const BASELINE_DATE_STR = '2026-07-12';
-const THRESHOLD_30_DAYS_STR = '2026-08-11';
+import { LoadingState } from '@/components/ui/LoadingState';
 
 interface Driver {
   id: number;
@@ -34,7 +30,7 @@ export default function DriverSafetyPage() {
       setLoading(true);
       try {
         const data = await apiClient('/drivers/');
-        setDrivers(data);
+        setDrivers(data || []);
       } catch (e) {
         console.error(e);
       } finally {
@@ -44,170 +40,186 @@ export default function DriverSafetyPage() {
     fetchDrivers();
   }, []);
 
-  const getLicenseClassification = (expiryDate: string) => {
-    if (expiryDate < BASELINE_DATE_STR) return 'EXPIRED';
-    if (expiryDate <= THRESHOLD_30_DAYS_STR) return 'EXPIRING_SOON';
+  const getLicenseClassification = (expiryStr: string) => {
+    if (!expiryStr) return 'UNKNOWN';
+    const now = new Date();
+    const expiry = new Date(expiryStr);
+    const diffTime = expiry.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) return 'EXPIRED';
+    if (diffDays <= 30) return 'EXPIRING_SOON';
     return 'VALID';
   };
 
   const getValidityBadge = (classification: string) => {
     switch (classification) {
       case 'EXPIRED':
-        return <Badge variant="outline" className="bg-rose-500/10 text-rose-400 border-rose-500/20 font-bold">EXPIRED LICENSE</Badge>;
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+            Expired
+          </span>
+        );
       case 'EXPIRING_SOON':
-        return <Badge variant="outline" className="bg-yellow-500/10 text-yellow-400 border-yellow-500/20 font-bold">EXPIRING SOON</Badge>;
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+            Expiring &lt;30d
+          </span>
+        );
+      case 'VALID':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            Valid
+          </span>
+        );
       default:
-        return <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 font-bold">VALID</Badge>;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'AVAILABLE': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
-      case 'ON_TRIP': return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
-      case 'OFF_DUTY': return 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20';
-      case 'SUSPENDED': return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
-      default: return 'bg-zinc-800 text-zinc-300';
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-gray-500/10 text-gray-500 border border-gray-500/20">
+            Unknown
+          </span>
+        );
     }
   };
 
   const filteredDrivers = drivers.filter(d => {
-    const matchSearch = d.name.toLowerCase().includes(search.toLowerCase()) || 
-                        d.license_number.toLowerCase().includes(search.toLowerCase());
-    
-    const classification = getLicenseClassification(d.license_expiry_date);
-    const matchValidity = validityFilter === 'ALL' || classification === validityFilter;
-
-    return matchSearch && matchValidity;
+    if (validityFilter !== 'ALL') {
+      const classification = getLicenseClassification(d.license_expiry_date);
+      if (validityFilter !== classification) return false;
+    }
+    if (search) {
+      const q = search.toLowerCase();
+      return (
+        d.name.toLowerCase().includes(q) ||
+        d.license_number.toLowerCase().includes(q) ||
+        (d.license_category && d.license_category.toLowerCase().includes(q))
+      );
+    }
+    return true;
   });
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-zinc-100 tracking-tight">Driver Safety Roster</h1>
-        <p className="text-sm text-zinc-400 mt-1">Read-only view for checking CDL expirations, driver availability status, and safety score analytics.</p>
+    <div className="space-y-6 font-sans max-w-[1040px] mx-auto">
+      {/* Page Header */}
+      <div className="pb-4 border-b border-gray-100 dark:border-white/[0.06]">
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+          Driver Safety & Compliance Audit
+        </h1>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="flex gap-4 items-center bg-[#18181b] p-4 rounded-lg border border-zinc-800">
-        <div className="relative w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
+      <div className="flex flex-col sm:flex-row gap-3 items-center justify-between p-4 rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#121212] shadow-2xs">
+        <div className="relative w-full sm:w-80">
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <Input 
-            placeholder="Search driver name or CDL..." 
+            placeholder="Search driver by name or license #..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 bg-zinc-900 border-zinc-700 text-zinc-100 placeholder:text-zinc-500"
+            className="pl-9 rounded-xl text-xs bg-gray-50 dark:bg-[#181818] border-gray-200 dark:border-white/10"
           />
         </div>
-        
-        <Select value={validityFilter} onValueChange={(v) => setValidityFilter(v || "ALL")}>
-          <SelectTrigger className="w-44 bg-zinc-900 border-zinc-700 text-zinc-100">
+
+        <Select value={validityFilter} onValueChange={(val) => setValidityFilter(val || "ALL")}>
+          <SelectTrigger className="w-full sm:w-48 rounded-xl text-xs bg-gray-50 dark:bg-[#181818] border-gray-200 dark:border-white/10">
             <SelectValue placeholder="License Validity" />
           </SelectTrigger>
-          <SelectContent className="bg-zinc-900 border-zinc-800 text-zinc-100">
+          <SelectContent>
             <SelectItem value="ALL">All Licenses</SelectItem>
             <SelectItem value="VALID">Valid Only</SelectItem>
-            <SelectItem value="EXPIRING_SOON">Expiring Soon</SelectItem>
-            <SelectItem value="EXPIRED">Expired Only</SelectItem>
+            <SelectItem value="EXPIRING_SOON">Expiring &lt;30d</SelectItem>
+            <SelectItem value="EXPIRED">Expired</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      {/* Main Table */}
-      <div className="rounded-lg border border-zinc-800 bg-[#18181b] overflow-hidden">
-        <Table>
-          <TableHeader className="bg-zinc-900/50">
-            <TableRow className="border-zinc-800 hover:bg-transparent">
-              <TableHead className="text-zinc-400 text-xs font-semibold tracking-wider uppercase">DRIVER</TableHead>
-              <TableHead className="text-zinc-400 text-xs font-semibold tracking-wider uppercase">LICENSE NUMBER</TableHead>
-              <TableHead className="text-zinc-400 text-xs font-semibold tracking-wider uppercase">LICENSE CLASS</TableHead>
-              <TableHead className="text-zinc-400 text-xs font-semibold tracking-wider uppercase">EXPIRY DATE</TableHead>
-              <TableHead className="text-zinc-400 text-xs font-semibold tracking-wider uppercase">VALIDITY</TableHead>
-              <TableHead className="text-zinc-400 text-xs font-semibold tracking-wider uppercase">SAFETY SCORE</TableHead>
-              <TableHead className="text-zinc-400 text-xs font-semibold tracking-wider uppercase">STATUS</TableHead>
+      {/* Table Container */}
+      <div className="rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#121212] overflow-hidden shadow-xs">
+        <div className="overflow-x-auto">
+          <Table>
+          <TableHeader>
+            <TableRow className="border-gray-100 dark:border-white/[0.06] hover:bg-transparent">
+              <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-gray-400 dark:text-gray-500 py-3.5 px-6">DRIVER</TableHead>
+              <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-gray-400 dark:text-gray-500 py-3.5 px-6">LICENSE #</TableHead>
+              <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-gray-400 dark:text-gray-500 py-3.5 px-6">CLASS</TableHead>
+              <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-gray-400 dark:text-gray-500 py-3.5 px-6">EXPIRY DATE</TableHead>
+              <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-gray-400 dark:text-gray-500 py-3.5 px-6">VALIDITY</TableHead>
+              <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-gray-400 dark:text-gray-500 py-3.5 px-6">SAFETY SCORE</TableHead>
+              <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-gray-400 dark:text-gray-500 py-3.5 px-6">STATUS</TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody>
+          <TableBody className="divide-y divide-gray-100 dark:divide-white/[0.06] text-xs">
             {loading ? (
-              <TableRow className="border-zinc-800">
-                <TableCell colSpan={7} className="text-center py-8 text-zinc-500">
-                  <Activity size={18} className="animate-spin inline mr-2 text-zinc-400" />
-                  Loading driver records...
+              <TableRow className="border-0">
+                <TableCell colSpan={7} className="py-0">
+                  <LoadingState message="Loading driver safety records..." className="py-16 min-h-[220px]" />
                 </TableCell>
               </TableRow>
             ) : filteredDrivers.length === 0 ? (
-              <TableRow className="border-zinc-800">
-                <TableCell colSpan={7} className="text-center py-8 text-zinc-500">No driver records found matching filters.</TableCell>
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-10 text-gray-400 dark:text-gray-500">
+                  No driver records found matching your filters.
+                </TableCell>
               </TableRow>
             ) : (
               filteredDrivers.map((d) => {
                 const classification = getLicenseClassification(d.license_expiry_date);
-                const isLowScore = d.safety_score !== null && d.safety_score < 60;
+                const score = d.safety_score ?? 100;
                 return (
-                  <TableRow key={d.id} className="border-zinc-800 hover:bg-zinc-800/30 transition-colors align-middle">
-                    {/* Driver Profile */}
-                    <TableCell className="py-4">
+                  <TableRow key={d.id} className="hover:bg-gray-50/70 dark:hover:bg-white/[0.02] transition-colors">
+                    <TableCell className="py-3.5 px-6">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center font-bold text-xs text-orange-400 shrink-0">
-                          {d.name.split(' ').map(n => n[0]).join('')}
+                        <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-white/10 flex items-center justify-center font-bold text-xs text-gray-800 dark:text-gray-200 shrink-0">
+                          {d.name ? d.name.substring(0, 2).toUpperCase() : 'DR'}
                         </div>
                         <div>
-                          <div className="font-bold text-zinc-200">{d.name}</div>
+                          <div className="font-semibold text-gray-900 dark:text-white">{d.name}</div>
                           {d.contact_number && (
-                            <div className="text-[10px] text-zinc-500 font-mono mt-0.5 flex items-center gap-1">
-                              <Phone size={10} /> {d.contact_number}
+                            <div className="text-[11px] text-gray-500 dark:text-gray-400 font-mono mt-0.5 flex items-center gap-1">
+                              <Phone size={11} /> {d.contact_number}
                             </div>
                           )}
                         </div>
                       </div>
                     </TableCell>
 
-                    {/* License Number */}
-                    <TableCell className="font-mono text-zinc-300 font-semibold">{d.license_number}</TableCell>
+                    <TableCell className="py-3.5 px-6 font-mono text-gray-700 dark:text-gray-300 font-semibold">
+                      {d.license_number}
+                    </TableCell>
 
-                    {/* License Category */}
-                    <TableCell className="text-zinc-300 font-semibold">{d.license_category}</TableCell>
+                    <TableCell className="py-3.5 px-6 font-semibold text-gray-700 dark:text-gray-300">
+                      {d.license_category}
+                    </TableCell>
 
-                    {/* Expiry Date */}
-                    <TableCell className="text-zinc-300 font-mono">{d.license_expiry_date}</TableCell>
+                    <TableCell className="py-3.5 px-6 font-mono text-gray-500 dark:text-gray-400">
+                      {d.license_expiry_date}
+                    </TableCell>
 
-                    {/* License Validity badge */}
-                    <TableCell>
+                    <TableCell className="py-3.5 px-6">
                       {getValidityBadge(classification)}
                     </TableCell>
 
-                    {/* Safety Score progress */}
-                    <TableCell>
-                      <div className="space-y-1.5 w-24">
-                        <div className="flex justify-between text-[11px]">
-                          <span className={`font-bold ${
-                            d.safety_score >= 90 ? 'text-emerald-400' :
-                            d.safety_score >= 70 ? 'text-yellow-500' : 'text-rose-500'
-                          }`}>
-                            {d.safety_score !== null ? d.safety_score : '100.0'}
-                          </span>
-                          <span className="text-zinc-500 font-mono">%</span>
-                        </div>
-                        <div className="w-full bg-zinc-900 h-1.5 rounded-full overflow-hidden border border-zinc-800">
+                    <TableCell className="py-3.5 px-6">
+                      <div className="flex items-center gap-2">
+                        <div className="w-20 bg-gray-100 dark:bg-white/10 rounded-full h-1.5 overflow-hidden">
                           <div 
-                            className={`h-full rounded-full transition-all duration-300 ${
-                              d.safety_score >= 90 ? 'bg-emerald-400' :
-                              d.safety_score >= 70 ? 'bg-yellow-500' : 'bg-rose-500'
+                            className={`h-full rounded-full ${
+                              score >= 85 ? 'bg-emerald-500' : score >= 70 ? 'bg-amber-500' : 'bg-red-500'
                             }`}
-                            style={{ width: `${d.safety_score !== null ? d.safety_score : 100}%` }}
+                            style={{ width: `${Math.min(100, Math.max(0, score))}%` }}
                           />
                         </div>
-                        {isLowScore && (
-                          <div className="text-[9px] font-bold text-rose-500">Low Score warning</div>
-                        )}
+                        <span className="font-mono font-semibold text-gray-900 dark:text-white">
+                          {score}
+                        </span>
                       </div>
                     </TableCell>
 
-                    {/* Status Badge */}
-                    <TableCell>
-                      <Badge variant="outline" className={`capitalize ${getStatusColor(d.status)}`}>
-                        {d.status.replace('_', ' ')}
-                      </Badge>
+                    <TableCell className="py-3.5 px-6">
+                      <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-gray-100 dark:bg-white/5 text-gray-700 dark:text-gray-300">
+                        {d.status}
+                      </span>
                     </TableCell>
                   </TableRow>
                 );
@@ -215,6 +227,7 @@ export default function DriverSafetyPage() {
             )}
           </TableBody>
         </Table>
+        </div>
       </div>
     </div>
   );
