@@ -15,6 +15,13 @@ class UserRole(str, Enum):
     FINANCIAL_ANALYST = "FINANCIAL_ANALYST"
 
 
+class TripStatus(str, Enum):
+    DRAFT = "DRAFT"
+    DISPATCHED = "DISPATCHED"
+    COMPLETED = "COMPLETED"
+    CANCELLED = "CANCELLED"
+
+
 class VehicleStatus(str, Enum):
     AVAILABLE = "AVAILABLE"
     ON_TRIP = "ON_TRIP"

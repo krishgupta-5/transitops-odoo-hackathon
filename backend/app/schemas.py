@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel, EmailStr, ConfigDict
 
-from app.enums import UserRole
+from app.enums import UserRole, TripStatus
 
 
 class UserCreate(BaseModel):
@@ -68,5 +68,50 @@ class DriverOut(BaseModel):
     name: str
     license_number: str
     status: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+from pydantic import Field
+
+class TripCreate(BaseModel):
+    source: str = Field(..., min_length=1)
+    destination: str = Field(..., min_length=1)
+    vehicle_id: int
+    driver_id: int
+    cargo_weight: float = Field(..., gt=0)
+    planned_distance: float = Field(..., gt=0)
+    revenue: float = Field(..., ge=0)
+
+
+class TripCompleteRequest(BaseModel):
+    final_odometer: int = Field(..., ge=0)
+    fuel_consumed: float = Field(..., ge=0)
+
+
+class TripOut(BaseModel):
+    id: int
+    trip_number: str
+    source: str
+    destination: str
+    vehicle_id: int
+    driver_id: int
+    cargo_weight: float
+    planned_distance: float
+    revenue: float
+    status: TripStatus
+    
+    initial_odometer: Optional[int] = None
+    final_odometer: Optional[int] = None
+    fuel_consumed: Optional[float] = None
+    
+    created_at: datetime
+    updated_at: datetime
+    dispatched_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    cancelled_at: Optional[datetime] = None
+
+    vehicle: VehicleOut
+    driver: DriverOut
 
     model_config = ConfigDict(from_attributes=True)
