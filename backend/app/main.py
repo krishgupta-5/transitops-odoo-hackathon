@@ -28,6 +28,9 @@ app.include_router(fuel_logs.router, prefix=settings.API_V1_STR)
 app.include_router(expenses.router, prefix=settings.API_V1_STR)
 app.include_router(analytics.router, prefix=settings.API_V1_STR)
 app.include_router(safety.router, prefix=settings.API_V1_STR)
+app.include_router(fuel_logs.router, prefix=settings.API_V1_STR)
+app.include_router(expenses.router, prefix=settings.API_V1_STR)
+app.include_router(analytics.router, prefix=settings.API_V1_STR)
 
 
 @app.on_event("startup")
