@@ -116,7 +116,6 @@ TransitOps/
 │   ├── package.json       # Node.js Dependencies
 │   └── tailwind.config.ts # Styling Tokens
 │
-├── docker-compose.yml
 └── README.md
 ```
 
@@ -127,7 +126,7 @@ TransitOps/
 * **Frontend**: Next.js (App Router), React, TypeScript, Tailwind CSS, shadcn/ui, Lucide Icons.
 * **Backend**: FastAPI, SQLAlchemy, Alembic, Pydantic, PyJWT.
 * **Persistence**: PostgreSQL.
-* **DevOps**: Docker, Docker Compose, Git.
+* **DevOps**: Git.
 
 
 
@@ -185,12 +184,6 @@ TransitOps/
    npm run dev
    ```
 4. Access the frontend app at `http://localhost:3000`.
-
-### Run with Docker Compose
-To launch the entire platform, including database dependencies, with a single command:
-```bash
-docker compose up --build
-```
 
 ---
 
