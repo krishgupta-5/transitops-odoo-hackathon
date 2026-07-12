@@ -160,14 +160,11 @@ class TripOut(BaseModel):
 
 
 class FuelLogCreate(BaseModel):
-    vehicle_id: int
     trip_id: int
-    liters: float = Field(..., gt=0)
     cost: float = Field(..., ge=0)
     fuel_date: date
 
 class FuelLogUpdate(BaseModel):
-    liters: Optional[float] = Field(None, gt=0)
     cost: Optional[float] = Field(None, ge=0)
     fuel_date: Optional[date] = None
 
