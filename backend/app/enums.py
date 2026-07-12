@@ -13,3 +13,24 @@ class UserRole(str, Enum):
     DISPATCHER = "DISPATCHER"
     SAFETY_OFFICER = "SAFETY_OFFICER"
     FINANCIAL_ANALYST = "FINANCIAL_ANALYST"
+
+
+class TripStatus(str, Enum):
+    DRAFT = "DRAFT"
+    DISPATCHED = "DISPATCHED"
+    COMPLETED = "COMPLETED"
+    CANCELLED = "CANCELLED"
+
+
+class VehicleStatus(str, Enum):
+    AVAILABLE = "AVAILABLE"
+    ON_TRIP = "ON_TRIP"
+    IN_SHOP = "IN_SHOP"
+    RETIRED = "RETIRED"
+
+
+class DriverStatus(str, Enum):
+    AVAILABLE = "AVAILABLE"
+    ON_TRIP = "ON_TRIP"
+    OFF_DUTY = "OFF_DUTY"
+    SUSPENDED = "SUSPENDED"
