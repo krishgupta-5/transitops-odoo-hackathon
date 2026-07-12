@@ -12,6 +12,47 @@ from db.database import get_db
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
+@router.get("/roles")
+def get_roles():
+    """Returns available roles and matching demo credentials for frontend dropdown selector."""
+    return {
+        "roles": [
+            {
+                "role": UserRole.FLEET_MANAGER.value,
+                "name": "Fleet Manager",
+                "demo_email": "fleet@transitops.demo",
+                "demo_password": "transitops2026",
+                "route": "/fleet-manager",
+                "description": "Fleet & Maintenance management"
+            },
+            {
+                "role": UserRole.DISPATCHER.value,
+                "name": "Dispatcher",
+                "demo_email": "dispatcher@transitops.demo",
+                "demo_password": "transitops2026",
+                "route": "/dispatcher",
+                "description": "Live Dispatch & Routes"
+            },
+            {
+                "role": UserRole.SAFETY_OFFICER.value,
+                "name": "Safety Officer",
+                "demo_email": "safety@transitops.demo",
+                "demo_password": "transitops2026",
+                "route": "/safety-officer",
+                "description": "Safety & Compliance inspection"
+            },
+            {
+                "role": UserRole.FINANCIAL_ANALYST.value,
+                "name": "Financial Analyst",
+                "demo_email": "finance@transitops.demo",
+                "demo_password": "transitops2026",
+                "route": "/financial-analyst",
+                "description": "Financial & Fuel analytics"
+            },
+        ]
+    }
+
+
 @router.post("/register", response_model=schemas.UserOut, status_code=status.HTTP_201_CREATED)
 def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     # Check global email uniqueness
@@ -22,13 +63,13 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Email already registered")
 
     hashed_pwd = utils.hash_password(user.password)
+    selected_role = user.role.value if user.role else UserRole.DISPATCHER.value
 
-    # All public registrations receive DISPATCHER role — not client-selectable
     new_user = models.User(
         name=user.name,
         email=user.email,
         hashed_password=hashed_pwd,
-        role=UserRole.DISPATCHER.value,
+        role=selected_role,
         is_active=True,
     )
     db.add(new_user)
@@ -36,6 +77,7 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db.refresh(new_user)
 
     return new_user
+
 
 
 @router.post("/login", response_model=schemas.Token)

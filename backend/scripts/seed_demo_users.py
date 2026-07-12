@@ -65,7 +65,7 @@ def seed():
             ).first()
 
             if existing:
-                print(f"  ⏭  Already exists: {user_data['email']} ({user_data['role']})")
+                print(f"  [SKIP] Already exists: {user_data['email']} ({user_data['role']})")
                 skipped += 1
                 continue
 
@@ -77,16 +77,17 @@ def seed():
                 is_active=True,
             )
             db.add(new_user)
-            print(f"  ✅ Created: {user_data['email']} ({user_data['role']})")
+            print(f"  [OK] Created: {user_data['email']} ({user_data['role']})")
             created += 1
 
         db.commit()
-        print(f"\nDone — {created} created, {skipped} skipped (already existed).")
+        print(f"\nDone -- {created} created, {skipped} skipped (already existed).")
 
     finally:
         db.close()
 
 
 if __name__ == "__main__":
-    print("🚀 Seeding TransitOps demo users...\n")
+    print("Seeding TransitOps demo users...\n")
     seed()
+
