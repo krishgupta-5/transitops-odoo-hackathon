@@ -115,9 +115,10 @@ export default function CreateDriverPage() {
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent className="bg-zinc-900 border-zinc-800 text-zinc-100">
-                    <SelectItem value="Class A">Class A</SelectItem>
-                    <SelectItem value="Class B">Class B</SelectItem>
-                    <SelectItem value="Class C">Class C</SelectItem>
+                    <SelectItem value="LMV">LMV</SelectItem>
+                    <SelectItem value="HMV">HMV</SelectItem>
+                    <SelectItem value="HGMV">HGMV</SelectItem>
+                    <SelectItem value="TRANSPORT">TRANSPORT</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

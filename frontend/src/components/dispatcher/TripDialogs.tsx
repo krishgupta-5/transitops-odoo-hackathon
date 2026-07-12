@@ -80,7 +80,7 @@ export default function TripDialogs({ trip, open, onClose, onSuccess }: TripDial
 
       {/* Complete Dialog */}
       <Dialog open={open.complete} onOpenChange={(isOpen) => !isOpen && onClose()}>
-        <DialogContent className="bg-zinc-900 border-zinc-800 text-zinc-100">
+        <DialogContent className="bg-zinc-900 border-zinc-800 text-zinc-100 max-w-md">
           <DialogHeader>
             <DialogTitle>Complete Trip {trip.trip_number}</DialogTitle>
             <DialogDescription className="text-zinc-400">
@@ -95,37 +95,85 @@ export default function TripDialogs({ trip, open, onClose, onSuccess }: TripDial
             </div>
           )}
 
-          <form onSubmit={onCompleteSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-zinc-400 uppercase">Final Odometer</label>
-              <Input 
-                required 
-                type="number" 
-                min={trip.initial_odometer || 0}
-                value={completeData.final_odometer} 
-                onChange={(e) => setCompleteData({...completeData, final_odometer: e.target.value})}
-                className="bg-zinc-800 border-zinc-700 text-zinc-100" 
-              />
+          <div className="space-y-4">
+            <div className="bg-zinc-800/50 p-4 rounded-md space-y-4 text-sm">
+              <div>
+                <span className="text-zinc-500 block text-xs uppercase font-semibold">Vehicle</span>
+                <span className="text-zinc-200">{trip.vehicle?.registration_number} | {trip.vehicle?.name}</span>
+              </div>
+              <div>
+                <span className="text-zinc-500 block text-xs uppercase font-semibold">Route</span>
+                <span className="text-zinc-200">{trip.source} &rarr; {trip.destination}</span>
+              </div>
+              <div>
+                <span className="text-zinc-500 block text-xs uppercase font-semibold">Starting Odometer</span>
+                <span className="text-zinc-200">{(trip.initial_odometer || 0).toLocaleString()} KM</span>
+                <p className="text-zinc-500 text-xs mt-0.5">Recorded at trip creation</p>
+              </div>
             </div>
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-zinc-400 uppercase">Fuel Consumed</label>
-              <Input 
-                required 
-                type="number" 
-                step="0.01" 
-                min="0"
-                value={completeData.fuel_consumed} 
-                onChange={(e) => setCompleteData({...completeData, fuel_consumed: e.target.value})}
-                className="bg-zinc-800 border-zinc-700 text-zinc-100" 
-              />
-            </div>
-            <DialogFooter className="pt-4">
-              <Button type="button" variant="outline" onClick={onClose} className="bg-transparent border-zinc-700 text-zinc-300">Cancel</Button>
-              <Button type="submit" disabled={loading} className="bg-green-600 hover:bg-green-700 text-white">
-                {loading ? "Completing..." : "Complete Trip"}
-              </Button>
-            </DialogFooter>
-          </form>
+
+            <form onSubmit={onCompleteSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-zinc-400 uppercase">Final Odometer</label>
+                <div className="flex items-center gap-2">
+                  <Input 
+                    required 
+                    type="number" 
+                    min={trip.initial_odometer || 0}
+                    value={completeData.final_odometer} 
+                    onChange={(e) => setCompleteData({...completeData, final_odometer: e.target.value})}
+                    className={`bg-zinc-800 border-zinc-700 text-zinc-100 ${completeData.final_odometer !== "" && parseInt(completeData.final_odometer) < (trip.initial_odometer || 0) ? "border-red-500 focus-visible:ring-red-500" : ""}`} 
+                  />
+                  <span className="text-zinc-500 text-sm font-medium">KM</span>
+                </div>
+                {completeData.final_odometer !== "" && parseInt(completeData.final_odometer) < (trip.initial_odometer || 0) && (
+                  <p className="text-red-400 text-xs mt-1">Final odometer must be &ge; {(trip.initial_odometer || 0).toLocaleString()} KM</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-zinc-400 uppercase">Distance Travelled</label>
+                <div className="text-zinc-200 bg-zinc-800/50 px-3 py-2.5 rounded-md border border-zinc-800 font-medium">
+                  {completeData.final_odometer !== "" && parseInt(completeData.final_odometer) >= (trip.initial_odometer || 0) 
+                    ? `${(parseInt(completeData.final_odometer) - (trip.initial_odometer || 0)).toLocaleString()} KM` 
+                    : "—"}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-zinc-400 uppercase">Fuel Consumed (L)</label>
+                <Input 
+                  required 
+                  type="number" 
+                  step="0.01" 
+                  min="0.01"
+                  value={completeData.fuel_consumed} 
+                  onChange={(e) => setCompleteData({...completeData, fuel_consumed: e.target.value})}
+                  className={`bg-zinc-800 border-zinc-700 text-zinc-100 ${completeData.fuel_consumed !== "" && parseFloat(completeData.fuel_consumed) <= 0 ? "border-red-500 focus-visible:ring-red-500" : ""}`} 
+                />
+                {completeData.fuel_consumed !== "" && parseFloat(completeData.fuel_consumed) <= 0 && (
+                  <p className="text-red-400 text-xs mt-1">Fuel consumed must be greater than 0.</p>
+                )}
+              </div>
+              
+              <DialogFooter className="pt-4">
+                <Button type="button" variant="outline" onClick={onClose} className="bg-transparent border-zinc-700 text-zinc-300">Cancel</Button>
+                <Button 
+                  type="submit" 
+                  disabled={
+                    loading || 
+                    completeData.final_odometer === "" || 
+                    parseInt(completeData.final_odometer) < (trip.initial_odometer || 0) ||
+                    completeData.fuel_consumed === "" ||
+                    parseFloat(completeData.fuel_consumed) <= 0
+                  } 
+                  className="bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
+                >
+                  {loading ? "Completing..." : "Complete Trip"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </div>
         </DialogContent>
       </Dialog>
 

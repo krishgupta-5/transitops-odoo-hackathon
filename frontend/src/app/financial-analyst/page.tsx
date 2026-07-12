@@ -62,7 +62,9 @@ export default function FinancialDashboard() {
         <Card className="bg-zinc-900/50 border-zinc-800">
           <CardHeader className="pb-2">
             <CardDescription className="text-zinc-400">Total Operational Cost</CardDescription>
-            <CardTitle className="text-2xl text-red-400">{formatINR(summary.total_operational_cost)}</CardTitle>
+            <CardTitle className="text-2xl text-red-400">
+              {summary.total_operational_cost !== null ? formatINR(summary.total_operational_cost) : <span className="text-yellow-500 text-lg">Incomplete</span>}
+            </CardTitle>
           </CardHeader>
         </Card>
 
@@ -154,7 +156,9 @@ export default function FinancialDashboard() {
                     <div className="text-xs text-zinc-500">{v.vehicle_name}</div>
                   </TableCell>
                   <TableCell className="text-right text-zinc-300">{formatINR(v.revenue)}</TableCell>
-                  <TableCell className="text-right text-zinc-300">{formatINR(v.total_operational_cost)}</TableCell>
+                  <TableCell className="text-right text-zinc-300">
+                    {v.total_operational_cost !== null ? formatINR(v.total_operational_cost) : <span className="text-yellow-500">N/A</span>}
+                  </TableCell>
                   <TableCell className={`text-right font-medium ${v.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                     {formatINR(v.profit)}
                   </TableCell>

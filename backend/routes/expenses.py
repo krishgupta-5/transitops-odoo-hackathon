@@ -9,7 +9,7 @@ from app.oauth2 import get_current_user, require_roles
 from app.enums import UserRole, ExpenseCategory
 
 router = APIRouter(
-    prefix="/api/v1/expenses",
+    prefix="/expenses",
     tags=["Expenses"]
 )
 
@@ -17,7 +17,7 @@ router = APIRouter(
 def create_expense(
     expense_in: ExpenseCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles([UserRole.FINANCIAL_ANALYST]))
+    current_user: User = Depends(require_roles(UserRole.FINANCIAL_ANALYST))
 ):
     vehicle = db.query(Vehicle).filter(Vehicle.id == expense_in.vehicle_id).first()
     if not vehicle:
@@ -29,6 +29,9 @@ def create_expense(
             raise HTTPException(status_code=404, detail="Trip not found")
         if trip.vehicle_id != expense_in.vehicle_id:
             raise HTTPException(status_code=400, detail="Trip does not belong to the selected Vehicle")
+
+    if expense_in.amount <= 0:
+        raise HTTPException(status_code=422, detail="Amount must be strictly positive")
 
     new_expense = Expense(
         vehicle_id=expense_in.vehicle_id,
@@ -51,7 +54,7 @@ def get_expenses(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles([UserRole.FINANCIAL_ANALYST, UserRole.FLEET_MANAGER]))
+    current_user: User = Depends(require_roles(UserRole.FINANCIAL_ANALYST, UserRole.FLEET_MANAGER))
 ):
     query = db.query(Expense)
     if vehicle_id:
@@ -67,7 +70,7 @@ def get_expenses(
 def get_expense(
     expense_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles([UserRole.FINANCIAL_ANALYST, UserRole.FLEET_MANAGER]))
+    current_user: User = Depends(require_roles(UserRole.FINANCIAL_ANALYST, UserRole.FLEET_MANAGER))
 ):
     expense = db.query(Expense).filter(Expense.id == expense_id).first()
     if not expense:
@@ -79,7 +82,7 @@ def update_expense(
     expense_id: int,
     expense_in: ExpenseUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles([UserRole.FINANCIAL_ANALYST]))
+    current_user: User = Depends(require_roles(UserRole.FINANCIAL_ANALYST))
 ):
     expense = db.query(Expense).filter(Expense.id == expense_id).first()
     if not expense:
@@ -100,7 +103,7 @@ def update_expense(
 def delete_expense(
     expense_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles([UserRole.FINANCIAL_ANALYST]))
+    current_user: User = Depends(require_roles(UserRole.FINANCIAL_ANALYST))
 ):
     expense = db.query(Expense).filter(Expense.id == expense_id).first()
     if not expense:

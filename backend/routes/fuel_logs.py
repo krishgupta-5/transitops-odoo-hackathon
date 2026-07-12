@@ -9,7 +9,7 @@ from app.oauth2 import get_current_user, require_roles
 from app.enums import UserRole, TripStatus
 
 router = APIRouter(
-    prefix="/api/v1/fuel-logs",
+    prefix="/fuel-logs",
     tags=["Fuel Logs"]
 )
 
@@ -17,7 +17,7 @@ router = APIRouter(
 def create_fuel_log(
     fuel_log_in: FuelLogCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles([UserRole.FINANCIAL_ANALYST]))
+    current_user: User = Depends(require_roles(UserRole.FINANCIAL_ANALYST))
 ):
     vehicle = db.query(Vehicle).filter(Vehicle.id == fuel_log_in.vehicle_id).first()
     if not vehicle:
@@ -52,7 +52,7 @@ def get_fuel_logs(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles([UserRole.FINANCIAL_ANALYST, UserRole.FLEET_MANAGER]))
+    current_user: User = Depends(require_roles(UserRole.FINANCIAL_ANALYST, UserRole.FLEET_MANAGER))
 ):
     query = db.query(FuelLog)
     if vehicle_id:
@@ -66,7 +66,7 @@ def get_fuel_logs(
 def get_fuel_log(
     fuel_log_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles([UserRole.FINANCIAL_ANALYST, UserRole.FLEET_MANAGER]))
+    current_user: User = Depends(require_roles(UserRole.FINANCIAL_ANALYST, UserRole.FLEET_MANAGER))
 ):
     fuel_log = db.query(FuelLog).filter(FuelLog.id == fuel_log_id).first()
     if not fuel_log:
@@ -78,7 +78,7 @@ def update_fuel_log(
     fuel_log_id: int,
     fuel_log_in: FuelLogUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles([UserRole.FINANCIAL_ANALYST]))
+    current_user: User = Depends(require_roles(UserRole.FINANCIAL_ANALYST))
 ):
     fuel_log = db.query(FuelLog).filter(FuelLog.id == fuel_log_id).first()
     if not fuel_log:
@@ -96,7 +96,7 @@ def update_fuel_log(
 def delete_fuel_log(
     fuel_log_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_roles([UserRole.FINANCIAL_ANALYST]))
+    current_user: User = Depends(require_roles(UserRole.FINANCIAL_ANALYST))
 ):
     fuel_log = db.query(FuelLog).filter(FuelLog.id == fuel_log_id).first()
     if not fuel_log:
