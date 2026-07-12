@@ -3,8 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { apiClient } from "@/lib/api";
-import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -15,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { AlertCircle } from "lucide-react";
+import { LoadingState } from "@/components/ui/LoadingState";
 
 type Driver = {
   id: number;
@@ -57,55 +55,107 @@ export default function FleetDriversPage() {
     return () => clearTimeout(delay);
   }, [search, statusFilter]);
 
-  const getStatusColor = (status: string) => {
+  const getDriverStatusStyle = (status: string) => {
     switch (status) {
-      case 'AVAILABLE': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
-      case 'ON_TRIP': return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
-      case 'OFF_DUTY': return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-      case 'SUSPENDED': return 'bg-red-500/10 text-red-400 border-red-500/20';
-      default: return 'bg-zinc-800 text-zinc-300';
+      case 'AVAILABLE':
+        return {
+          backgroundColor: 'rgba(16, 185, 129, 0.15)',
+          color: '#10B981',
+          borderColor: 'rgba(16, 185, 129, 0.4)',
+        };
+      case 'ON_TRIP':
+        return {
+          backgroundColor: 'rgba(59, 130, 246, 0.15)',
+          color: '#3B82F6',
+          borderColor: 'rgba(59, 130, 246, 0.4)',
+        };
+      case 'OFF_DUTY':
+        return {
+          backgroundColor: 'rgba(168, 85, 247, 0.15)',
+          color: '#A855F7',
+          borderColor: 'rgba(168, 85, 247, 0.4)',
+        };
+      case 'SUSPENDED':
+        return {
+          backgroundColor: 'rgba(239, 68, 68, 0.15)',
+          color: '#EF4444',
+          borderColor: 'rgba(239, 68, 68, 0.4)',
+        };
+      default:
+        return {
+          backgroundColor: 'rgba(156, 163, 175, 0.15)',
+          color: '#9CA3AF',
+          borderColor: 'rgba(156, 163, 175, 0.4)',
+        };
     }
   };
 
-  const getLicenseStatus = (expiryDate: string) => {
+  const getLicenseStatusStyle = (expiryDate: string) => {
     const now = new Date();
     const expiry = new Date(expiryDate);
     const thirtyDaysFromNow = new Date();
     thirtyDaysFromNow.setDate(now.getDate() + 30);
-    
+
     if (expiry < now) {
-      return <Badge variant="outline" className="bg-red-500/10 text-red-400 border-red-500/20 gap-1"><AlertCircle className="w-3 h-3"/> EXPIRED</Badge>;
+      return {
+        text: 'EXPIRED',
+        style: {
+          backgroundColor: 'rgba(239, 68, 68, 0.15)',
+          color: '#EF4444',
+          borderColor: 'rgba(239, 68, 68, 0.4)',
+        },
+      };
     } else if (expiry <= thirtyDaysFromNow) {
-      return <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/20 gap-1"><AlertCircle className="w-3 h-3"/> EXPIRING SOON</Badge>;
+      return {
+        text: 'EXPIRING SOON',
+        style: {
+          backgroundColor: 'rgba(245, 158, 11, 0.15)',
+          color: '#F59E0B',
+          borderColor: 'rgba(245, 158, 11, 0.4)',
+        },
+      };
     }
-    return null;
+    return {
+      text: 'VALID',
+      style: {
+        backgroundColor: 'rgba(16, 185, 129, 0.15)',
+        color: '#10B981',
+        borderColor: 'rgba(16, 185, 129, 0.4)',
+      },
+    };
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-end">
+    <div className="space-y-6 font-sans max-w-[1040px] mx-auto">
+      {/* Title & Action */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-zinc-100 tracking-tight">Drivers</h1>
-          <p className="text-sm text-zinc-400 mt-1">Manage the fleet driver directory.</p>
+          <h1 className="text-xl font-semibold tracking-tight text-gray-900 dark:text-white">
+            Drivers
+          </h1>
         </div>
-        <Link href="/fleet-manager/drivers/create" className={buttonVariants({ className: "bg-purple-600 hover:bg-purple-700 text-white" })}>
-          Add Driver
+        <Link
+          href="/fleet-manager/drivers/create"
+          className="bg-black dark:bg-white text-white dark:text-black text-xs font-semibold px-4 py-2 rounded-xl hover:opacity-85 transition-opacity"
+        >
+          + Add Driver
         </Link>
       </div>
 
-      <div className="flex gap-4 items-center bg-[#18181b] p-4 rounded-lg border border-zinc-800">
+      {/* Filter Bar */}
+      <div className="flex flex-wrap gap-3 items-center">
         <Input 
-          placeholder="Search name or license..." 
+          placeholder="Search drivers..." 
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-64 bg-zinc-900 border-zinc-700 text-zinc-100 placeholder:text-zinc-500"
+          className="w-64 bg-transparent border-gray-200 dark:border-white/10 text-gray-900 dark:text-white placeholder:text-gray-400 font-mono text-xs h-9 rounded-xl focus-visible:ring-1 focus-visible:ring-gray-400"
         />
         
         <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v || "all")}>
-          <SelectTrigger className="w-40 bg-zinc-900 border-zinc-700 text-zinc-100">
+          <SelectTrigger className="w-44 bg-transparent border-gray-200 dark:border-white/10 text-gray-900 dark:text-white font-mono text-xs rounded-xl">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
-          <SelectContent className="bg-zinc-900 border-zinc-800 text-zinc-100">
+          <SelectContent className="bg-white dark:bg-[#0F0F0F] border-gray-200 dark:border-gray-800 font-mono text-xs rounded-xl">
             <SelectItem value="all">All Statuses</SelectItem>
             <SelectItem value="AVAILABLE">Available</SelectItem>
             <SelectItem value="ON_TRIP">On Trip</SelectItem>
@@ -115,56 +165,77 @@ export default function FleetDriversPage() {
         </Select>
       </div>
 
-      <div className="rounded-lg border border-zinc-800 bg-[#18181b] overflow-hidden">
+      {/* Drivers Table Container */}
+      <div className="border border-gray-200/80 dark:border-white/[0.08] rounded-xl bg-white dark:bg-[#0F0F0F] overflow-hidden">
         <Table>
-          <TableHeader className="bg-zinc-900/50">
-            <TableRow className="border-zinc-800 hover:bg-transparent">
-              <TableHead className="text-zinc-400 text-xs font-semibold tracking-wider uppercase">NAME</TableHead>
-              <TableHead className="text-zinc-400 text-xs font-semibold tracking-wider uppercase">LICENSE</TableHead>
-              <TableHead className="text-zinc-400 text-xs font-semibold tracking-wider uppercase">EXPIRY</TableHead>
-              <TableHead className="text-zinc-400 text-xs font-semibold tracking-wider uppercase">SAFETY SCORE</TableHead>
-              <TableHead className="text-zinc-400 text-xs font-semibold tracking-wider uppercase">STATUS</TableHead>
-              <TableHead className="text-zinc-400 text-xs font-semibold tracking-wider uppercase text-right">ACTIONS</TableHead>
+          <TableHeader className="bg-gray-50/50 dark:bg-white/[0.02] border-b border-gray-100 dark:border-white/[0.06]">
+            <TableRow className="border-0 hover:bg-transparent">
+              <TableHead className="text-gray-400 text-[11px] font-semibold tracking-wider uppercase">DRIVER NAME</TableHead>
+              <TableHead className="text-gray-400 text-[11px] font-semibold tracking-wider uppercase">LICENSE</TableHead>
+              <TableHead className="text-gray-400 text-[11px] font-semibold tracking-wider uppercase">CONTACT</TableHead>
+              <TableHead className="text-gray-400 text-[11px] font-semibold tracking-wider uppercase">SAFETY SCORE</TableHead>
+              <TableHead className="text-gray-400 text-[11px] font-semibold tracking-wider uppercase">STATUS</TableHead>
+              <TableHead className="text-gray-400 text-[11px] font-semibold tracking-wider uppercase text-right">ACTIONS</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow className="border-zinc-800">
-                <TableCell colSpan={6} className="text-center py-8 text-zinc-500">Loading drivers...</TableCell>
+              <TableRow className="border-0">
+                <TableCell colSpan={6} className="py-0">
+                  <LoadingState message="Loading drivers..." className="py-16 min-h-[220px]" />
+                </TableCell>
               </TableRow>
             ) : drivers.length === 0 ? (
-              <TableRow className="border-zinc-800">
-                <TableCell colSpan={6} className="text-center py-8 text-zinc-500">No drivers found.</TableCell>
+              <TableRow className="border-0">
+                <TableCell colSpan={6} className="text-center py-10 text-gray-400 text-xs">No drivers found.</TableCell>
               </TableRow>
             ) : (
-              drivers.map((d) => (
-                <TableRow key={d.id} className="border-zinc-800 hover:bg-zinc-800/50 transition-colors">
-                  <TableCell className="font-medium text-zinc-200">
-                    <div className="flex items-center gap-2">
-                      {d.name}
-                      {getLicenseStatus(d.license_expiry_date)}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-zinc-400">
-                    <div>{d.license_number}</div>
-                    <div className="text-xs text-zinc-500">{d.license_category}</div>
-                  </TableCell>
-                  <TableCell className="text-zinc-400">{d.license_expiry_date}</TableCell>
-                  <TableCell className="text-zinc-400">
-                    {d.safety_score !== null ? `${d.safety_score}/100` : 'N/A'}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className={getStatusColor(d.status)}>
-                      {d.status.replace('_', ' ')}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right space-x-2">
-                    <Link href={`/fleet-manager/drivers/${d.id}`} className={buttonVariants({ variant: "outline", size: "sm", className: "bg-transparent border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white" })}>
-                      View
-                    </Link>
-                  </TableCell>
-                </TableRow>
-              ))
+              drivers.map((d) => {
+                const licenseStatus = getLicenseStatusStyle(d.license_expiry_date);
+                return (
+                  <TableRow key={d.id} className="border-b border-gray-100 dark:border-white/[0.05] hover:bg-gray-50/60 dark:hover:bg-white/[0.02] transition-colors">
+                    <TableCell className="font-semibold text-gray-900 dark:text-white">{d.name}</TableCell>
+                    <TableCell className="text-gray-600 dark:text-gray-300">
+                      <div className="font-medium">{d.license_number}</div>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-[11px] text-gray-400">Class {d.license_category}</span>
+                        <span
+                          style={licenseStatus.style}
+                          className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                        >
+                          {licenseStatus.text}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-gray-600 dark:text-gray-300">{d.contact_number}</TableCell>
+                    <TableCell>
+                      {d.safety_score !== null ? (
+                        <span className="font-semibold text-gray-900 dark:text-white">
+                          {d.safety_score}/100
+                        </span>
+                      ) : (
+                        <span className="text-gray-400">N/A</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <span
+                        style={getDriverStatusStyle(d.status)}
+                        className="text-[10px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-full"
+                      >
+                        {d.status.replace('_', ' ')}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Link
+                        href={`/fleet-manager/drivers/${d.id}`}
+                        className="text-xs font-medium px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors"
+                      >
+                        View
+                      </Link>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>

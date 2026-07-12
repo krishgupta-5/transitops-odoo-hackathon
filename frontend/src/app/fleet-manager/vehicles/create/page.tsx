@@ -77,21 +77,21 @@ export default function CreateVehiclePage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-zinc-400 uppercase">Registration Number</label>
-                <Input 
+                <Input
                   required
                   placeholder="e.g. TRUCK-001"
                   value={formData.registration_number}
-                  onChange={e => setFormData({...formData, registration_number: e.target.value})}
+                  onChange={e => setFormData({ ...formData, registration_number: e.target.value })}
                   className="bg-zinc-900 border-zinc-700 text-zinc-100"
                 />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-zinc-400 uppercase">Model / Name</label>
-                <Input 
+                <Input
                   required
                   placeholder="e.g. Volvo FH16"
                   value={formData.name}
-                  onChange={e => setFormData({...formData, name: e.target.value})}
+                  onChange={e => setFormData({ ...formData, name: e.target.value })}
                   className="bg-zinc-900 border-zinc-700 text-zinc-100"
                 />
               </div>
@@ -100,7 +100,7 @@ export default function CreateVehiclePage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-zinc-400 uppercase">Vehicle Type</label>
-                <Select required value={formData.vehicle_type} onValueChange={(v) => setFormData({...formData, vehicle_type: v || ""})}>
+                <Select required value={formData.vehicle_type} onValueChange={(v) => setFormData({ ...formData, vehicle_type: v || "" })}>
                   <SelectTrigger className="bg-zinc-900 border-zinc-700 text-zinc-100">
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
@@ -114,13 +114,13 @@ export default function CreateVehiclePage() {
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-zinc-400 uppercase">Max Load Capacity (kg)</label>
-                <Input 
+                <Input
                   required
                   type="number"
                   min="1"
                   step="0.1"
                   value={formData.max_load_capacity}
-                  onChange={e => setFormData({...formData, max_load_capacity: e.target.value})}
+                  onChange={e => setFormData({ ...formData, max_load_capacity: e.target.value })}
                   className="bg-zinc-900 border-zinc-700 text-zinc-100"
                 />
               </div>
@@ -129,22 +129,22 @@ export default function CreateVehiclePage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-zinc-400 uppercase">Initial Odometer (km)</label>
-                <Input 
+                <Input
                   type="number"
                   min="0"
                   value={formData.odometer}
-                  onChange={e => setFormData({...formData, odometer: e.target.value})}
+                  onChange={e => setFormData({ ...formData, odometer: e.target.value })}
                   className="bg-zinc-900 border-zinc-700 text-zinc-100"
                 />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-zinc-400 uppercase">Acquisition Cost ($)</label>
-                <Input 
+                <Input
                   type="number"
                   min="0"
                   step="0.01"
                   value={formData.acquisition_cost}
-                  onChange={e => setFormData({...formData, acquisition_cost: e.target.value})}
+                  onChange={e => setFormData({ ...formData, acquisition_cost: e.target.value })}
                   className="bg-zinc-900 border-zinc-700 text-zinc-100"
                 />
               </div>

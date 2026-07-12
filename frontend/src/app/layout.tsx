@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
-import { Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -10,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "TransitOps",
-  description: "Synchronized role-based access control operational platform",
+  description: "Advanced operational fleet telemetry and management system",
 };
 
 export default function RootLayout({
@@ -21,11 +26,11 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body
-        className={`${geistMono.className} min-h-full flex flex-col font-mono bg-white text-gray-900 dark:bg-[#0A0A0A] dark:text-gray-100 transition-colors`}
+        className={`${geistSans.className} min-h-full flex flex-col font-sans bg-white text-gray-900 dark:bg-[#0A0A0A] dark:text-gray-100 transition-colors`}
         suppressHydrationWarning
       >
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
