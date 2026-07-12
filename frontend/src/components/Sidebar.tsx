@@ -10,6 +10,12 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
+  UserCog,
+  Fuel,
+  DollarSign,
+  BarChart3,
+  MapPin,
+  Wrench,
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { clearAuthSession } from '@/lib/auth';
@@ -23,6 +29,7 @@ export interface NavItem {
 interface SidebarProps {
   navItems?: NavItem[];
   roleName?: string;
+  profileHref?: string;
   user?: {
     name?: string;
     role?: string;
@@ -33,11 +40,32 @@ export const DEFAULT_FLEET_NAV_ITEMS: NavItem[] = [
   { name: 'Dashboard', href: '/fleet-manager', icon: <LayoutDashboard size={18} /> },
   { name: 'Vehicles', href: '/fleet-manager/vehicles', icon: <Truck size={18} /> },
   { name: 'Drivers', href: '/fleet-manager/drivers', icon: <Users size={18} /> },
+  { name: 'Profile Settings', href: '/fleet-manager/profile', icon: <UserCog size={18} /> },
+];
+
+export const DEFAULT_FINANCIAL_NAV_ITEMS: NavItem[] = [
+  { name: 'Dashboard', href: '/financial-analyst', icon: <LayoutDashboard size={18} /> },
+  { name: 'Fuel Logs', href: '/financial-analyst/fuel-logs', icon: <Fuel size={18} /> },
+  { name: 'Expenses', href: '/financial-analyst/expenses', icon: <DollarSign size={18} /> },
+  { name: 'Analytics', href: '/financial-analyst/analytics', icon: <BarChart3 size={18} /> },
+  { name: 'Profile Settings', href: '/financial-analyst/profile', icon: <UserCog size={18} /> },
+];
+
+export const DEFAULT_DISPATCHER_NAV_ITEMS: NavItem[] = [
+  { name: 'Dashboard', href: '/dispatcher', icon: <LayoutDashboard size={18} /> },
+  { name: 'Trips', href: '/dispatcher/trips', icon: <MapPin size={18} /> },
+  { name: 'Fleet Status', href: '/dispatcher/fleet', icon: <Truck size={18} /> },
+  { name: 'Drivers', href: '/dispatcher/drivers', icon: <Users size={18} /> },
+  { name: 'Maintenance', href: '/dispatcher/maintenance', icon: <Wrench size={18} /> },
+  { name: 'Fuel & Expenses', href: '/dispatcher/fuel', icon: <Fuel size={18} /> },
+  { name: 'Analytics', href: '/dispatcher/analytics', icon: <BarChart3 size={18} /> },
+  { name: 'Profile Settings', href: '/dispatcher/profile', icon: <UserCog size={18} /> },
 ];
 
 export function Sidebar({
   navItems = DEFAULT_FLEET_NAV_ITEMS,
   roleName = 'Fleet Manager',
+  profileHref = '/fleet-manager/profile',
   user
 }: SidebarProps) {
   const pathname = usePathname();
@@ -112,9 +140,10 @@ export function Sidebar({
         {/* Navigation Items */}
         <nav className="p-2 space-y-1.5">
           {navItems.map((item) => {
-            const isActive =
-              pathname === item.href ||
-              (item.href !== '/fleet-manager' && pathname.startsWith(item.href));
+            const isRoot = item.name === 'Dashboard' || item.href === '/fleet-manager' || item.href === '/financial-analyst';
+            const isActive = isRoot
+              ? pathname === item.href
+              : pathname === item.href || pathname.startsWith(`${item.href}/`);
 
             return (
               <Link
@@ -140,9 +169,12 @@ export function Sidebar({
         {!isCollapsed ? (
           <div className="space-y-2">
             <div className="flex items-center justify-between px-2 py-1">
-              <span className="text-xs font-semibold text-gray-800 dark:text-gray-200 truncate max-w-[120px]">
+              <Link
+                href={profileHref}
+                className="text-xs font-semibold text-gray-800 dark:text-gray-200 truncate max-w-[120px] hover:text-black dark:hover:text-white transition-colors"
+              >
                 {user?.name || roleName}
-              </span>
+              </Link>
               <ThemeToggle />
             </div>
             <button

@@ -41,7 +41,7 @@ function SelectTrigger({
       data-slot="select-trigger"
       data-size={size}
       className={cn(
-        "flex w-fit items-center justify-between gap-2 rounded-xl border border-gray-200 dark:border-white/10 bg-transparent py-2 px-3 text-xs font-mono whitespace-nowrap transition-colors outline-none select-none focus-visible:ring-1 focus-visible:ring-gray-400 disabled:cursor-not-allowed disabled:opacity-50 data-placeholder:text-muted-foreground data-[size=default]:h-9 data-[size=sm]:h-7 cursor-pointer",
+        "flex w-full items-center justify-between gap-2 rounded-xl border border-gray-200 dark:border-white/10 bg-transparent py-2.5 px-3.5 text-xs font-sans font-semibold text-gray-900 dark:text-white transition-colors outline-none select-none focus-visible:ring-1 focus-visible:ring-gray-400 disabled:cursor-not-allowed disabled:opacity-50 data-placeholder:text-muted-foreground data-[size=default]:h-10 data-[size=sm]:h-8 cursor-pointer",
         className
       )}
       {...props}
@@ -49,7 +49,7 @@ function SelectTrigger({
       {children}
       <SelectPrimitive.Icon
         render={
-          <ChevronDownIcon className="pointer-events-none size-3.5 text-gray-400 shrink-0" />
+          <ChevronDownIcon className="pointer-events-none size-4 text-gray-400 shrink-0" />
         }
       />
     </SelectPrimitive.Trigger>
@@ -61,9 +61,9 @@ function SelectContent({
   children,
   side = "bottom",
   sideOffset = 6,
-  align = "center",
+  align = "start",
   alignOffset = 0,
-  alignItemWithTrigger = true,
+  alignItemWithTrigger = false,
   ...props
 }: SelectPrimitive.Popup.Props &
   Pick<
@@ -84,7 +84,7 @@ function SelectContent({
           data-slot="select-content"
           data-align-trigger={alignItemWithTrigger}
           className={cn(
-            "relative isolate z-50 max-h-(--available-height) w-(--anchor-width) min-w-36 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#0F0F0F] p-1.5 text-gray-900 dark:text-white shadow-xl duration-100 data-[align-trigger=true]:animate-none data-[side=bottom]:slide-in-from-top-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 font-mono",
+            "relative isolate z-50 max-h-72 min-w-[var(--anchor-width)] overflow-x-hidden overflow-y-auto rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#161616] p-1.5 text-gray-900 dark:text-white shadow-xl duration-100 font-sans text-xs font-semibold",
             className
           )}
           {...props}

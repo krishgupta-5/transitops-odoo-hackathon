@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { apiClient } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import TripDialogs from "@/components/dispatcher/TripDialogs";
+import { LoadingState } from "@/components/ui/LoadingState";
 
 export default function TripsPage() {
   const [trips, setTrips] = useState<any[]>([]);
@@ -58,10 +59,10 @@ export default function TripsPage() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "DRAFT": return <Badge className="bg-zinc-500 hover:bg-zinc-600 text-white shadow-sm border-none">Draft</Badge>;
-      case "DISPATCHED": return <Badge className="bg-blue-500 hover:bg-blue-600 text-white shadow-sm border-none">Dispatched</Badge>;
-      case "COMPLETED": return <Badge className="bg-green-500 hover:bg-green-600 text-white shadow-sm border-none">Completed</Badge>;
-      case "CANCELLED": return <Badge className="bg-red-500 hover:bg-red-600 text-white shadow-sm border-none">Cancelled</Badge>;
+      case "DRAFT": return <Badge className="bg-gray-500 hover:bg-gray-600 text-white shadow-xs border-none">Draft</Badge>;
+      case "DISPATCHED": return <Badge className="bg-blue-600 hover:bg-blue-700 text-white shadow-xs border-none">Dispatched</Badge>;
+      case "COMPLETED": return <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs border-none">Completed</Badge>;
+      case "CANCELLED": return <Badge className="bg-rose-600 hover:bg-rose-700 text-white shadow-xs border-none">Cancelled</Badge>;
       default: return <Badge variant="outline">{status}</Badge>;
     }
   };
@@ -72,83 +73,85 @@ export default function TripsPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      <div className="flex justify-between items-center">
+    <div className="space-y-8 max-w-[1400px] mx-auto font-sans pb-12">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-zinc-100 tracking-tight">Trips</h1>
-          <p className="text-sm text-zinc-400 mt-1">Manage all dispatcher trips.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Trips</h1>
         </div>
-        <Link href="/dispatcher/trips/create" className={buttonVariants({ className: "bg-orange-600 hover:bg-orange-700 text-white" })}>
-          Create Trip
+        <Link 
+          href="/dispatcher/trips/create" 
+          className="bg-black dark:bg-white text-white dark:text-black text-xs font-bold px-5 py-2.5 rounded-xl hover:opacity-90 transition-all cursor-pointer shadow-sm shrink-0"
+        >
+          + Create New Trip
         </Link>
       </div>
 
-      <div className="flex gap-4 items-center bg-[#18181b] p-4 rounded-lg border border-zinc-800">
+      <div className="flex flex-wrap gap-3 items-center">
         <Input 
-          placeholder="Search trips..." 
+          placeholder="Search trips by number, origin, destination..." 
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="max-w-xs bg-zinc-900 border-zinc-700 text-zinc-100"
+          className="max-w-sm bg-white dark:bg-[#121212] border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-xl h-10 text-xs font-semibold"
         />
         <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v || "all")}>
-          <SelectTrigger className="w-[180px] bg-zinc-900 border-zinc-700 text-zinc-100">
-            <SelectValue placeholder="Status" />
+          <SelectTrigger className="w-[180px] bg-white dark:bg-[#121212] border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-xl h-10 text-xs font-semibold">
+            <SelectValue placeholder="Status: All" />
           </SelectTrigger>
-          <SelectContent className="bg-zinc-900 border-zinc-700 text-zinc-100">
-            <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="DRAFT">Draft</SelectItem>
-            <SelectItem value="DISPATCHED">Dispatched</SelectItem>
-            <SelectItem value="COMPLETED">Completed</SelectItem>
-            <SelectItem value="CANCELLED">Cancelled</SelectItem>
+          <SelectContent className="bg-white dark:bg-[#181818] border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-2xl">
+            <SelectItem value="all" className="text-xs font-semibold">All Statuses</SelectItem>
+            <SelectItem value="DRAFT" className="text-xs font-semibold">Draft</SelectItem>
+            <SelectItem value="DISPATCHED" className="text-xs font-semibold">Dispatched</SelectItem>
+            <SelectItem value="COMPLETED" className="text-xs font-semibold">Completed</SelectItem>
+            <SelectItem value="CANCELLED" className="text-xs font-semibold">Cancelled</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      <div className="rounded-md border border-zinc-800 bg-[#18181b] overflow-hidden">
+      <div className="rounded-3xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#121212] shadow-xs overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center text-zinc-500">Loading trips...</div>
+          <LoadingState message="Loading trips..." className="py-20" />
         ) : error ? (
-          <div className="p-8 text-center text-red-500">{error}</div>
+          <div className="p-10 text-center text-xs font-bold text-red-600 dark:text-red-400">{error}</div>
         ) : filteredTrips.length === 0 ? (
-          <div className="p-8 text-center text-zinc-500">No trips found.</div>
+          <div className="p-16 text-center text-xs font-semibold text-gray-500 dark:text-gray-400">No trips found.</div>
         ) : (
           <Table>
-            <TableHeader className="bg-transparent border-b border-zinc-800">
-              <TableRow className="hover:bg-transparent border-none">
-                <TableHead className="text-xs text-zinc-500 font-medium tracking-wider h-10 uppercase">Trip</TableHead>
-                <TableHead className="text-xs text-zinc-500 font-medium tracking-wider h-10 uppercase">Route</TableHead>
-                <TableHead className="text-xs text-zinc-500 font-medium tracking-wider h-10 uppercase">Vehicle & Driver</TableHead>
-                <TableHead className="text-xs text-zinc-500 font-medium tracking-wider h-10 uppercase">Weight / Dist</TableHead>
-                <TableHead className="text-xs text-zinc-500 font-medium tracking-wider h-10 uppercase">Status</TableHead>
-                <TableHead className="text-xs text-zinc-500 font-medium tracking-wider h-10 uppercase text-right">Actions</TableHead>
+            <TableHeader className="bg-gray-50/50 dark:bg-white/[0.02]">
+              <TableRow className="border-b border-gray-100 dark:border-white/[0.06] hover:bg-transparent">
+                <TableHead className="text-xs font-bold text-gray-500 dark:text-gray-400 pl-6">Trip</TableHead>
+                <TableHead className="text-xs font-bold text-gray-500 dark:text-gray-400">Route</TableHead>
+                <TableHead className="text-xs font-bold text-gray-500 dark:text-gray-400">Vehicle & Driver</TableHead>
+                <TableHead className="text-xs font-bold text-gray-500 dark:text-gray-400">Weight / Dist</TableHead>
+                <TableHead className="text-xs font-bold text-gray-500 dark:text-gray-400">Status</TableHead>
+                <TableHead className="text-xs font-bold text-gray-500 dark:text-gray-400 text-right pr-6">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredTrips.map((trip) => (
-                <TableRow key={trip.id} className="border-b border-zinc-800 hover:bg-zinc-800/30 border-none">
-                  <TableCell className="font-medium text-zinc-200 py-3">{trip.trip_number}</TableCell>
-                  <TableCell className="text-zinc-400 py-3 text-sm">
+                <TableRow key={trip.id} className="border-b border-gray-100 dark:border-white/[0.05] hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors">
+                  <TableCell className="font-bold text-xs text-gray-900 dark:text-white pl-6">{trip.trip_number}</TableCell>
+                  <TableCell className="text-xs font-semibold text-gray-700 dark:text-gray-300">
                     {trip.source} &rarr; {trip.destination}
                   </TableCell>
-                  <TableCell className="text-zinc-400 py-3 text-sm">
-                    <div className="font-medium text-zinc-300">{trip.vehicle?.registration_number}</div>
-                    <div className="text-xs">{trip.driver?.name}</div>
+                  <TableCell className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                    <div className="font-bold text-gray-900 dark:text-white">{trip.vehicle?.registration_number}</div>
+                    <div className="text-[11px] text-gray-500 dark:text-gray-400">{trip.driver?.name}</div>
                   </TableCell>
-                  <TableCell className="text-zinc-400 text-sm py-3">
+                  <TableCell className="text-xs font-semibold text-gray-700 dark:text-gray-300">
                     {trip.cargo_weight}kg / {trip.planned_distance}km
                   </TableCell>
-                  <TableCell className="py-3">
+                  <TableCell>
                     {getStatusBadge(trip.status)}
                   </TableCell>
-                  <TableCell className="text-right py-3 space-x-2">
+                  <TableCell className="text-right pr-6 space-x-2">
                     {trip.status === "DRAFT" && (
-                      <Button variant="outline" size="sm" className="bg-transparent border-blue-500/50 text-blue-400 hover:bg-blue-500/10 hover:text-blue-300" onClick={() => openAction(trip, 'dispatch')}>Dispatch</Button>
+                      <Button variant="outline" size="sm" className="bg-white dark:bg-[#1A1A1A] border-blue-500/30 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 text-xs font-bold rounded-xl" onClick={() => openAction(trip, 'dispatch')}>Dispatch</Button>
                     )}
                     {trip.status === "DISPATCHED" && (
-                      <Button variant="outline" size="sm" className="bg-transparent border-green-500/50 text-green-400 hover:bg-green-500/10 hover:text-green-300" onClick={() => openAction(trip, 'complete')}>Complete</Button>
+                      <Button variant="outline" size="sm" className="bg-white dark:bg-[#1A1A1A] border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 text-xs font-bold rounded-xl" onClick={() => openAction(trip, 'complete')}>Complete</Button>
                     )}
                     {(trip.status === "DRAFT" || trip.status === "DISPATCHED") && (
-                      <Button variant="outline" size="sm" className="bg-transparent border-red-500/50 text-red-400 hover:bg-red-500/10 hover:text-red-300" onClick={() => openAction(trip, 'cancel')}>Cancel</Button>
+                      <Button variant="outline" size="sm" className="bg-white dark:bg-[#1A1A1A] border-rose-500/30 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 text-xs font-bold rounded-xl" onClick={() => openAction(trip, 'cancel')}>Cancel</Button>
                     )}
                   </TableCell>
                 </TableRow>

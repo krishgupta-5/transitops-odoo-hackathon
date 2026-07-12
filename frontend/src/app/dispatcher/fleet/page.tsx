@@ -13,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { LoadingState } from "@/components/ui/LoadingState";
 
 type Vehicle = {
   id: number;
@@ -49,94 +50,86 @@ export default function DispatcherFleetPage() {
   };
 
   useEffect(() => {
-    // Debounce search
     const delay = setTimeout(() => {
       fetchVehicles();
     }, 300);
     return () => clearTimeout(delay);
   }, [search, statusFilter, typeFilter]);
 
-  const getStatusColor = (status: string) => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'AVAILABLE': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
-      case 'ON_TRIP': return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
-      case 'IN_SHOP': return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-      case 'RETIRED': return 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20';
-      default: return 'bg-zinc-800 text-zinc-300';
+      case 'AVAILABLE':
+        return <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white shadow-xs border-none">Available</Badge>;
+      case 'ON_TRIP':
+        return <Badge className="bg-blue-600 hover:bg-blue-700 text-white shadow-xs border-none">On Trip</Badge>;
+      case 'IN_SHOP':
+        return <Badge className="bg-amber-500 hover:bg-amber-600 text-white shadow-xs border-none">In Shop</Badge>;
+      case 'RETIRED':
+        return <Badge className="bg-rose-600 hover:bg-rose-700 text-white shadow-xs border-none">Retired</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
     }
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-end">
-        <div>
-          <h1 className="text-2xl font-semibold text-zinc-100 tracking-tight">Vehicles</h1>
-          <p className="text-sm text-zinc-400 mt-1">View the active vehicle registry.</p>
-        </div>
+    <div className="space-y-8 max-w-[1400px] mx-auto font-sans pb-12">
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Fleet Status</h1>
       </div>
 
-      <div className="flex gap-4 items-center bg-[#18181b] p-4 rounded-lg border border-zinc-800">
+      <div className="flex flex-wrap gap-3 items-center">
         <Input 
-          placeholder="Search registration or name..." 
+          placeholder="Search registration or model name..." 
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-64 bg-zinc-900 border-zinc-700 text-zinc-100 placeholder:text-zinc-500"
+          className="max-w-sm bg-white dark:bg-[#121212] border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-xl h-10 text-xs font-semibold"
         />
         
         <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v || "all")}>
-          <SelectTrigger className="w-40 bg-zinc-900 border-zinc-700 text-zinc-100">
-            <SelectValue placeholder="Status" />
+          <SelectTrigger className="w-[180px] bg-white dark:bg-[#121212] border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-xl h-10 text-xs font-semibold">
+            <SelectValue placeholder="Status: All" />
           </SelectTrigger>
-          <SelectContent className="bg-zinc-900 border-zinc-800 text-zinc-100">
-            <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="AVAILABLE">Available</SelectItem>
-            <SelectItem value="ON_TRIP">On Trip</SelectItem>
-            <SelectItem value="IN_SHOP">In Shop</SelectItem>
-            <SelectItem value="RETIRED">Retired</SelectItem>
+          <SelectContent className="bg-white dark:bg-[#181818] border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-2xl">
+            <SelectItem value="all" className="text-xs font-semibold">All Statuses</SelectItem>
+            <SelectItem value="AVAILABLE" className="text-xs font-semibold">Available</SelectItem>
+            <SelectItem value="ON_TRIP" className="text-xs font-semibold">On Trip</SelectItem>
+            <SelectItem value="IN_SHOP" className="text-xs font-semibold">In Shop</SelectItem>
+            <SelectItem value="RETIRED" className="text-xs font-semibold">Retired</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      <div className="rounded-lg border border-zinc-800 bg-[#18181b] overflow-hidden">
-        <Table>
-          <TableHeader className="bg-zinc-900/50">
-            <TableRow className="border-zinc-800 hover:bg-transparent">
-              <TableHead className="text-zinc-400 text-xs font-semibold tracking-wider uppercase">REGISTRATION</TableHead>
-              <TableHead className="text-zinc-400 text-xs font-semibold tracking-wider uppercase">MODEL</TableHead>
-              <TableHead className="text-zinc-400 text-xs font-semibold tracking-wider uppercase">TYPE / CAP</TableHead>
-              <TableHead className="text-zinc-400 text-xs font-semibold tracking-wider uppercase">ODOMETER</TableHead>
-              <TableHead className="text-zinc-400 text-xs font-semibold tracking-wider uppercase text-right">STATUS</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              <TableRow className="border-zinc-800">
-                <TableCell colSpan={5} className="text-center py-8 text-zinc-500">Loading vehicles...</TableCell>
+      <div className="rounded-3xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#121212] shadow-xs overflow-hidden">
+        {loading ? (
+          <LoadingState message="Loading vehicles..." className="py-20" />
+        ) : vehicles.length === 0 ? (
+          <div className="p-16 text-center text-xs font-semibold text-gray-500 dark:text-gray-400">No vehicles found.</div>
+        ) : (
+          <Table>
+            <TableHeader className="bg-gray-50/50 dark:bg-white/[0.02]">
+              <TableRow className="border-b border-gray-100 dark:border-white/[0.06] hover:bg-transparent">
+                <TableHead className="text-xs font-bold text-gray-500 dark:text-gray-400 pl-6">Registration</TableHead>
+                <TableHead className="text-xs font-bold text-gray-500 dark:text-gray-400">Model</TableHead>
+                <TableHead className="text-xs font-bold text-gray-500 dark:text-gray-400">Type / Capacity</TableHead>
+                <TableHead className="text-xs font-bold text-gray-500 dark:text-gray-400">Odometer</TableHead>
+                <TableHead className="text-xs font-bold text-gray-500 dark:text-gray-400 pr-6">Status</TableHead>
               </TableRow>
-            ) : vehicles.length === 0 ? (
-              <TableRow className="border-zinc-800">
-                <TableCell colSpan={5} className="text-center py-8 text-zinc-500">No vehicles found.</TableCell>
-              </TableRow>
-            ) : (
-              vehicles.map((v) => (
-                <TableRow key={v.id} className="border-zinc-800 hover:bg-zinc-800/50 transition-colors">
-                  <TableCell className="font-medium text-zinc-200">{v.registration_number}</TableCell>
-                  <TableCell className="text-zinc-400">{v.name}</TableCell>
-                  <TableCell className="text-zinc-400">
-                    <div>{v.vehicle_type}</div>
-                    <div className="text-xs text-zinc-500">{v.max_load_capacity} kg</div>
-                  </TableCell>
-                  <TableCell className="text-zinc-400">{v.odometer} km</TableCell>
-                  <TableCell className="text-right">
-                    <Badge variant="outline" className={getStatusColor(v.status)}>
-                      {v.status.replace('_', ' ')}
-                    </Badge>
+            </TableHeader>
+            <TableBody>
+              {vehicles.map((v) => (
+                <TableRow key={v.id} className="border-b border-gray-100 dark:border-white/[0.05] hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors">
+                  <TableCell className="font-bold text-xs text-gray-900 dark:text-white pl-6">{v.registration_number}</TableCell>
+                  <TableCell className="text-xs font-semibold text-gray-700 dark:text-gray-300">{v.name}</TableCell>
+                  <TableCell className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase">{v.vehicle_type} / {v.max_load_capacity} kg</TableCell>
+                  <TableCell className="text-xs font-semibold text-gray-700 dark:text-gray-300">{v.odometer.toLocaleString()} km</TableCell>
+                  <TableCell className="pr-6">
+                    {getStatusBadge(v.status)}
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ))}
+            </TableBody>
+          </Table>
+        )}
       </div>
     </div>
   );

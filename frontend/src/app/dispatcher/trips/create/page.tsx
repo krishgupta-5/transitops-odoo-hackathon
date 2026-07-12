@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiClient } from "@/lib/api";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -79,52 +79,54 @@ export default function CreateTripPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-3xl mx-auto">
+    <div className="space-y-8 max-w-3xl mx-auto font-sans pb-12">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-semibold text-zinc-100 tracking-tight">Create Trip</h1>
-          <p className="text-sm text-zinc-400 mt-1">Assign a new trip to an available vehicle and driver.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Create Trip</h1>
         </div>
-        <Link href="/dispatcher/trips" className={buttonVariants({ variant: "outline", className: "bg-transparent border-zinc-700 text-zinc-300" })}>
+        <Link 
+          href="/dispatcher/trips" 
+          className="bg-gray-100 dark:bg-white/10 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-white/20 text-xs font-bold px-4 py-2.5 rounded-xl transition-all"
+        >
           Cancel
         </Link>
       </div>
 
-      <Card className="bg-[#18181b] border-zinc-800">
-        <CardHeader>
-          <CardTitle className="text-zinc-100 font-medium">Trip Details</CardTitle>
+      <Card className="bg-white dark:bg-[#121212] border-gray-200 dark:border-white/10 rounded-3xl shadow-xs">
+        <CardHeader className="pb-4 border-b border-gray-100 dark:border-white/[0.06]">
+          <CardTitle className="text-base font-bold text-gray-900 dark:text-white">Trip Specifications</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           {error && (
-            <div className="flex gap-2 items-start text-red-400 text-sm mb-6 bg-red-500/10 p-3 rounded-md border border-red-500/20">
+            <div className="flex gap-2 items-start text-red-600 dark:text-red-400 text-xs font-semibold mb-6 bg-red-500/10 p-3.5 rounded-xl border border-red-500/20">
               <AlertCircle size={18} className="shrink-0 mt-0.5" />
               <p>{error}</p>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-zinc-400 uppercase">Source</label>
-                <Input required value={formData.source} onChange={e => setFormData({...formData, source: e.target.value})} className="bg-zinc-900 border-zinc-700 text-zinc-100" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300">Source *</label>
+                <Input required value={formData.source} onChange={e => setFormData({...formData, source: e.target.value})} className="w-full bg-gray-50 dark:bg-[#1A1A1A] border-gray-200 dark:border-white/10 text-gray-900 dark:text-white text-xs font-semibold rounded-xl h-10 px-3.5" placeholder="Origin city or depot" />
               </div>
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-zinc-400 uppercase">Destination</label>
-                <Input required value={formData.destination} onChange={e => setFormData({...formData, destination: e.target.value})} className="bg-zinc-900 border-zinc-700 text-zinc-100" />
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300">Destination *</label>
+                <Input required value={formData.destination} onChange={e => setFormData({...formData, destination: e.target.value})} className="w-full bg-gray-50 dark:bg-[#1A1A1A] border-gray-200 dark:border-white/10 text-gray-900 dark:text-white text-xs font-semibold rounded-xl h-10 px-3.5" placeholder="Destination city or depot" />
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-zinc-400 uppercase">Vehicle</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300">Vehicle *</label>
                 <Select required value={formData.vehicle_id} onValueChange={(v) => setFormData({...formData, vehicle_id: v || ""})}>
-                  <SelectTrigger className="bg-zinc-900 border-zinc-700 text-zinc-100">
-                    <SelectValue placeholder="Select an available vehicle" />
+                  <SelectTrigger className="w-full bg-gray-50 dark:bg-[#1A1A1A] border-gray-200 dark:border-white/10 text-gray-900 dark:text-white text-xs font-semibold rounded-xl h-10 px-3.5">
+                    <SelectValue placeholder="Select an available vehicle..." />
                   </SelectTrigger>
-                  <SelectContent className="bg-zinc-900 border-zinc-700 text-zinc-100 max-h-64">
-                    {vehicles.length === 0 && <SelectItem value="none" disabled>No vehicles available</SelectItem>}
+                  <SelectContent className="bg-white dark:bg-[#181818] border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-2xl max-h-60">
+                    {vehicles.length === 0 && <SelectItem value="none" disabled className="text-xs">No vehicles available</SelectItem>}
                     {vehicles.map(v => (
-                      <SelectItem key={v.id} value={v.id.toString()}>
+                      <SelectItem key={v.id} value={v.id.toString()} className="text-xs font-semibold py-2">
                         {v.registration_number} ({v.vehicle_type}) - Max Load: {v.max_load_capacity}kg
                       </SelectItem>
                     ))}
@@ -132,16 +134,16 @@ export default function CreateTripPage() {
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-zinc-400 uppercase">Driver</label>
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300">Driver *</label>
                 <Select required value={formData.driver_id} onValueChange={(v) => setFormData({...formData, driver_id: v || ""})}>
-                  <SelectTrigger className="bg-zinc-900 border-zinc-700 text-zinc-100">
-                    <SelectValue placeholder="Select an available driver" />
+                  <SelectTrigger className="w-full bg-gray-50 dark:bg-[#1A1A1A] border-gray-200 dark:border-white/10 text-gray-900 dark:text-white text-xs font-semibold rounded-xl h-10 px-3.5">
+                    <SelectValue placeholder="Select an available driver..." />
                   </SelectTrigger>
-                  <SelectContent className="bg-zinc-900 border-zinc-700 text-zinc-100 max-h-64">
-                    {drivers.length === 0 && <SelectItem value="none" disabled>No drivers available</SelectItem>}
+                  <SelectContent className="bg-white dark:bg-[#181818] border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-2xl max-h-60">
+                    {drivers.length === 0 && <SelectItem value="none" disabled className="text-xs">No drivers available</SelectItem>}
                     {drivers.map(d => (
-                      <SelectItem key={d.id} value={d.id.toString()}>
+                      <SelectItem key={d.id} value={d.id.toString()} className="text-xs font-semibold py-2">
                         {d.name} ({d.license_number})
                       </SelectItem>
                     ))}
@@ -150,24 +152,24 @@ export default function CreateTripPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-zinc-400 uppercase">Cargo Weight (kg)</label>
-                <Input required type="number" step="0.01" min="0.01" value={formData.cargo_weight} onChange={e => setFormData({...formData, cargo_weight: e.target.value})} className="bg-zinc-900 border-zinc-700 text-zinc-100" />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300">Cargo Weight (kg) *</label>
+                <Input required type="number" step="0.01" min="0.01" value={formData.cargo_weight} onChange={e => setFormData({...formData, cargo_weight: e.target.value})} className="w-full bg-gray-50 dark:bg-[#1A1A1A] border-gray-200 dark:border-white/10 text-gray-900 dark:text-white text-xs font-semibold rounded-xl h-10 px-3.5" />
               </div>
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-zinc-400 uppercase">Planned Dist (km)</label>
-                <Input required type="number" step="0.01" min="0.01" value={formData.planned_distance} onChange={e => setFormData({...formData, planned_distance: e.target.value})} className="bg-zinc-900 border-zinc-700 text-zinc-100" />
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300">Planned Distance (km) *</label>
+                <Input required type="number" step="0.01" min="0.01" value={formData.planned_distance} onChange={e => setFormData({...formData, planned_distance: e.target.value})} className="w-full bg-gray-50 dark:bg-[#1A1A1A] border-gray-200 dark:border-white/10 text-gray-900 dark:text-white text-xs font-semibold rounded-xl h-10 px-3.5" />
               </div>
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-zinc-400 uppercase">Revenue ($)</label>
-                <Input required type="number" step="0.01" min="0" value={formData.revenue} onChange={e => setFormData({...formData, revenue: e.target.value})} className="bg-zinc-900 border-zinc-700 text-zinc-100" />
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300">Revenue (INR) *</label>
+                <Input required type="number" step="0.01" min="0" value={formData.revenue} onChange={e => setFormData({...formData, revenue: e.target.value})} className="w-full bg-gray-50 dark:bg-[#1A1A1A] border-gray-200 dark:border-white/10 text-gray-900 dark:text-white text-xs font-semibold rounded-xl h-10 px-3.5" />
               </div>
             </div>
 
             <div className="pt-4 flex justify-end">
-              <Button type="submit" disabled={loading} className="bg-orange-600 hover:bg-orange-700 text-white w-32">
-                {loading ? "Creating..." : "Create Trip"}
+              <Button type="submit" disabled={loading} className="bg-black dark:bg-white text-white dark:text-black font-bold text-xs px-6 h-10 rounded-xl hover:opacity-90 transition-opacity">
+                {loading ? "Creating Trip..." : "Create Trip"}
               </Button>
             </div>
           </form>

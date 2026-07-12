@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Trash2 } from "lucide-react";
+import { LoadingState } from "@/components/ui/LoadingState";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Dialog,
@@ -125,38 +126,49 @@ export default function ExpensesPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-8 max-w-[1400px] mx-auto font-sans pb-12">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-zinc-100">Operational Expenses</h2>
-          <p className="text-zinc-400">Track tolls, repairs, insurance, permits, and other vehicle costs.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Operational Expenses</h1>
         </div>
         
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger className="bg-green-600 hover:bg-green-700 text-white inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium h-10 px-4 py-2 transition-colors">
-            Add Expense
+          <DialogTrigger className="bg-black dark:bg-white text-white dark:text-black text-xs font-bold px-5 py-2.5 rounded-xl hover:opacity-90 transition-all cursor-pointer shadow-sm shrink-0">
+            + Record Operational Expense
           </DialogTrigger>
-          <DialogContent className="bg-zinc-900 border-zinc-800 text-zinc-100">
+          <DialogContent className="bg-white dark:bg-[#141414] border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-3xl p-6 sm:p-7 shadow-2xl sm:max-w-xl overflow-visible">
             <DialogHeader>
-              <DialogTitle>Add Expense</DialogTitle>
-              <DialogDescription className="text-zinc-400">
-                Record a new operational expense for a vehicle.
+              <DialogTitle className="text-lg font-bold text-gray-900 dark:text-white">Record Operational Expense</DialogTitle>
+              <DialogDescription className="text-xs text-gray-500 dark:text-gray-400">
+                Record a new operational expense for a vehicle or specific trip.
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4 pt-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium leading-none">Vehicle *</label>
+            <form onSubmit={handleSubmit} className="space-y-4 pt-3">
+              <div className="space-y-1.5">
+                <label htmlFor="expense_date" className="block text-xs font-bold text-gray-700 dark:text-gray-300">Date *</label>
+                <Input 
+                  id="expense_date" 
+                  type="date"
+                  required
+                  className="w-full bg-gray-50 dark:bg-[#1A1A1A] border-gray-200 dark:border-white/10 text-gray-900 dark:text-white text-xs font-semibold rounded-xl h-10 px-3.5"
+                  value={formData.expense_date}
+                  onChange={(e) => setFormData({...formData, expense_date: e.target.value})}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-gray-700 dark:text-gray-300">Vehicle *</label>
                   <Select required value={formData.vehicle_id} onValueChange={handleVehicleChange}>
-                    <SelectTrigger className="bg-zinc-950 border-zinc-800 text-zinc-100">
-                      <SelectValue placeholder="Select Vehicle" />
+                    <SelectTrigger className="w-full bg-gray-50 dark:bg-[#1A1A1A] border-gray-200 dark:border-white/10 text-gray-900 dark:text-white text-xs font-semibold rounded-xl h-10 px-3.5">
+                      <SelectValue placeholder="Select Vehicle..." />
                     </SelectTrigger>
-                    <SelectContent className="bg-zinc-900 border-zinc-800 text-zinc-100">
+                    <SelectContent className="bg-white dark:bg-[#181818] border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-2xl shadow-xl max-h-60">
                       {vehicles.length === 0 ? (
-                        <SelectItem value="none" disabled>Loading vehicles...</SelectItem>
+                        <SelectItem value="none" disabled className="text-xs">Loading vehicles...</SelectItem>
                       ) : (
                         vehicles.map(v => (
-                          <SelectItem key={v.id} value={v.id.toString()}>
+                          <SelectItem key={v.id} value={v.id.toString()} className="text-xs font-semibold py-2">
                             {v.registration_number} — {v.name}
                           </SelectItem>
                         ))
@@ -164,18 +176,18 @@ export default function ExpensesPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium leading-none">Trip (Optional)</label>
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-gray-700 dark:text-gray-300">Trip (Optional)</label>
                   <Select value={formData.trip_id || "none"} onValueChange={handleTripChange}>
-                    <SelectTrigger className="bg-zinc-950 border-zinc-800 text-zinc-100">
+                    <SelectTrigger className="w-full bg-gray-50 dark:bg-[#1A1A1A] border-gray-200 dark:border-white/10 text-gray-900 dark:text-white text-xs font-semibold rounded-xl h-10 px-3.5">
                       <SelectValue placeholder="No Trip / Vehicle-level Expense" />
                     </SelectTrigger>
-                    <SelectContent className="bg-zinc-900 border-zinc-800 text-zinc-100">
-                      <SelectItem value="none">No Trip / Vehicle-level Expense</SelectItem>
+                    <SelectContent className="bg-white dark:bg-[#181818] border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-2xl shadow-xl max-h-60">
+                      <SelectItem value="none" className="text-xs font-semibold py-2">No Trip / Vehicle-level Expense</SelectItem>
                       {trips
                         .filter(t => !formData.vehicle_id || t.vehicle_id.toString() === formData.vehicle_id)
                         .map(t => (
-                          <SelectItem key={t.id} value={t.id.toString()}>
+                          <SelectItem key={t.id} value={t.id.toString()} className="text-xs font-semibold py-2">
                             {t.trip_number} — {t.route?.source} → {t.route?.destination}
                           </SelectItem>
                       ))}
@@ -183,113 +195,115 @@ export default function ExpensesPage() {
                   </Select>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label htmlFor="category" className="text-sm font-medium leading-none">Category</label>
-                  <Select onValueChange={(value: any) => setFormData({...formData, category: value || ''})}>
-                    <SelectTrigger className="bg-zinc-950 border-zinc-800 text-zinc-100">
-                      <SelectValue placeholder="Select Category" />
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label htmlFor="category" className="block text-xs font-bold text-gray-700 dark:text-gray-300">Category *</label>
+                  <Select value={formData.category} onValueChange={(value: any) => setFormData({...formData, category: value || ''})}>
+                    <SelectTrigger className="w-full bg-gray-50 dark:bg-[#1A1A1A] border-gray-200 dark:border-white/10 text-gray-900 dark:text-white text-xs font-semibold rounded-xl h-10 px-3.5">
+                      <SelectValue placeholder="Select Category..." />
                     </SelectTrigger>
-                    <SelectContent className="bg-zinc-900 border-zinc-800 text-zinc-100">
-                      <SelectItem value="TOLL">Toll</SelectItem>
-                      <SelectItem value="REPAIR">Repair</SelectItem>
-                      <SelectItem value="INSURANCE">Insurance</SelectItem>
-                      <SelectItem value="PERMIT">Permit</SelectItem>
-                      <SelectItem value="PARKING">Parking</SelectItem>
-                      <SelectItem value="OTHER">Other</SelectItem>
+                    <SelectContent className="bg-white dark:bg-[#181818] border-gray-200 dark:border-white/10 text-gray-900 dark:text-white rounded-2xl shadow-xl">
+                      <SelectItem value="TOLL" className="text-xs font-semibold py-2">Toll</SelectItem>
+                      <SelectItem value="REPAIR" className="text-xs font-semibold py-2">Repair</SelectItem>
+                      <SelectItem value="INSURANCE" className="text-xs font-semibold py-2">Insurance</SelectItem>
+                      <SelectItem value="PERMIT" className="text-xs font-semibold py-2">Permit</SelectItem>
+                      <SelectItem value="PARKING" className="text-xs font-semibold py-2">Parking</SelectItem>
+                      <SelectItem value="OTHER" className="text-xs font-semibold py-2">Other</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <label htmlFor="amount" className="text-sm font-medium leading-none">Amount (INR)</label>
+                <div className="space-y-1.5">
+                  <label htmlFor="amount" className="block text-xs font-bold text-gray-700 dark:text-gray-300">Amount (INR) *</label>
                   <Input 
                     id="amount" 
                     type="number"
                     step="0.01"
                     min="0.01"
                     required
-                    className="bg-zinc-950 border-zinc-800 text-zinc-100"
+                    placeholder="e.g. 2450.00"
+                    className="w-full bg-gray-50 dark:bg-[#1A1A1A] border-gray-200 dark:border-white/10 text-gray-900 dark:text-white text-xs font-semibold rounded-xl h-10 px-3.5"
                     value={formData.amount}
                     onChange={(e) => setFormData({...formData, amount: e.target.value})}
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label htmlFor="expense_date" className="text-sm font-medium leading-none">Date</label>
-                  <Input 
-                    id="expense_date" 
-                    type="date"
-                    required
-                    className="bg-zinc-950 border-zinc-800 text-zinc-100"
-                    value={formData.expense_date}
-                    onChange={(e) => setFormData({...formData, expense_date: e.target.value})}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="description" className="text-sm font-medium leading-none">Description</label>
-                  <textarea 
-                    id="description" 
-                    className="flex min-h-[80px] w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 ring-offset-zinc-950 placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-800 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    placeholder="Enter toll plaza, permit, parking, repair, or other expense details..."
-                    value={formData.description}
-                    onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  />
-                </div>
+
+              <div className="space-y-1.5">
+                <label htmlFor="description" className="block text-xs font-bold text-gray-700 dark:text-gray-300">Description</label>
+                <Input
+                  id="description" 
+                  type="text"
+                  className="w-full bg-gray-50 dark:bg-[#1A1A1A] border-gray-200 dark:border-white/10 text-gray-900 dark:text-white text-xs font-semibold rounded-xl h-10 px-3.5"
+                  placeholder="Enter toll plaza, permit, parking, or repair details..."
+                  value={formData.description}
+                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                />
               </div>
-              <div className="flex justify-end gap-3 pt-4">
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="border-zinc-700 hover:bg-zinc-800 text-zinc-300">
+
+              <div className="flex justify-end gap-3 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setIsDialogOpen(false)}
+                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors cursor-pointer"
+                >
                   Cancel
-                </Button>
-                <Button type="submit" className="bg-green-600 hover:bg-green-700 text-white" disabled={!formData.category}>
-                  Save
-                </Button>
+                </button>
+                <button
+                  type="submit"
+                  disabled={!formData.category || !formData.vehicle_id}
+                  className="bg-black dark:bg-white text-white dark:text-black text-xs font-bold px-5 py-2.5 rounded-xl hover:opacity-90 transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                >
+                  Save Expense Record
+                </button>
               </div>
             </form>
           </DialogContent>
         </Dialog>
       </div>
 
-      {error && <div className="text-red-400 bg-red-400/10 p-4 rounded-md border border-red-400/20">{error}</div>}
+      {error && <div className="text-red-600 dark:text-red-400 bg-red-500/10 p-4 rounded-xl border border-red-500/20 text-xs font-semibold">{error}</div>}
 
-      <div className="bg-[#111111] rounded-lg border border-zinc-800 overflow-hidden">
+      <div className="bg-white dark:bg-[#121212] rounded-3xl border border-gray-200 dark:border-white/10 overflow-hidden shadow-xs">
         <Table>
           <TableHeader>
-            <TableRow className="border-zinc-800 hover:bg-zinc-900/50">
-              <TableHead className="text-zinc-400">Date</TableHead>
-              <TableHead className="text-zinc-400">Vehicle</TableHead>
-              <TableHead className="text-zinc-400">Category</TableHead>
-              <TableHead className="text-zinc-400">Description</TableHead>
-              <TableHead className="text-zinc-400 text-right">Amount</TableHead>
-              <TableHead className="text-zinc-400 text-right w-12"></TableHead>
+            <TableRow className="border-gray-100 dark:border-white/[0.06] hover:bg-transparent">
+              <TableHead className="text-xs font-bold text-gray-500 dark:text-gray-400 pl-6">Date</TableHead>
+              <TableHead className="text-xs font-bold text-gray-500 dark:text-gray-400">Vehicle</TableHead>
+              <TableHead className="text-xs font-bold text-gray-500 dark:text-gray-400">Category</TableHead>
+              <TableHead className="text-xs font-bold text-gray-500 dark:text-gray-400">Description</TableHead>
+              <TableHead className="text-xs font-bold text-gray-500 dark:text-gray-400 text-right">Amount</TableHead>
+              <TableHead className="text-xs font-bold text-gray-500 dark:text-gray-400 text-right w-12 pr-6"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center text-zinc-500">Loading...</TableCell>
+              <TableRow className="border-0">
+                <TableCell colSpan={6} className="py-0">
+                  <LoadingState message="Loading expenses..." className="py-16 min-h-[220px]" />
+                </TableCell>
               </TableRow>
             ) : expenses.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center text-zinc-500">No expenses found.</TableCell>
+                <TableCell colSpan={6} className="h-24 text-center text-xs font-semibold text-gray-500 dark:text-gray-400">No expenses found.</TableCell>
               </TableRow>
             ) : (
               expenses.map((expense) => (
-                <TableRow key={expense.id} className="border-zinc-800 hover:bg-zinc-900/50">
-                  <TableCell className="text-zinc-300">{new Date(expense.expense_date).toLocaleDateString()}</TableCell>
+                <TableRow key={expense.id} className="border-gray-100 dark:border-white/[0.06] hover:bg-gray-50 dark:hover:bg-white/[0.02]">
+                  <TableCell className="text-xs font-semibold text-gray-700 dark:text-gray-300 pl-6">{new Date(expense.expense_date).toLocaleDateString()}</TableCell>
                   <TableCell>
-                    <div className="font-medium text-zinc-100">{expense.vehicle?.registration_number}</div>
-                    <div className="text-xs text-zinc-500">{expense.vehicle?.name}</div>
+                    <div className="font-bold text-sm text-gray-900 dark:text-white">{expense.vehicle?.registration_number}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">{expense.vehicle?.name}</div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className="text-zinc-300 border-zinc-700 bg-zinc-800/50">
+                    <Badge variant="outline" className="text-xs font-semibold text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/[0.04]">
                       {expense.category}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-zinc-400">{expense.description || '-'}</TableCell>
-                  <TableCell className="text-right text-zinc-300 font-medium">{formatINR(expense.amount)}</TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(expense.id)} className="h-8 w-8 text-zinc-500 hover:text-red-400 hover:bg-red-400/10">
+                  <TableCell className="text-xs text-gray-500 dark:text-gray-400">{expense.description || '-'}</TableCell>
+                  <TableCell className="text-right text-xs font-bold text-gray-900 dark:text-white">{formatINR(expense.amount)}</TableCell>
+                  <TableCell className="text-right pr-6">
+                    <Button variant="ghost" size="icon" onClick={() => handleDelete(expense.id)} className="h-8 w-8 text-gray-400 hover:text-red-500 hover:bg-red-500/10">
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </TableCell>

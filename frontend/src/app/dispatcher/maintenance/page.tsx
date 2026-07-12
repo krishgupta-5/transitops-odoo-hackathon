@@ -1,10 +1,29 @@
-export default function ComingSoonPage() {
+'use client';
+
+import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Wrench } from 'lucide-react';
+
+export default function MaintenanceComingSoonPage() {
   return (
-    <div className="flex h-full items-center justify-center">
-      <div className="text-center">
-        <h2 className="text-xl font-medium text-zinc-300">Coming Soon</h2>
-        <p className="text-zinc-500 mt-2">This feature is currently under development.</p>
+    <div className="space-y-8 max-w-[1400px] mx-auto font-sans pb-12">
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+          Maintenance Scheduling
+        </h1>
       </div>
+
+      <Card className="bg-white dark:bg-[#121212] border-gray-200 dark:border-white/10 rounded-3xl shadow-xs p-12 text-center">
+        <CardContent className="flex flex-col items-center justify-center space-y-4">
+          <div className="w-14 h-14 rounded-2xl bg-black/5 dark:bg-white/10 flex items-center justify-center text-gray-900 dark:text-white">
+            <Wrench className="w-6 h-6" />
+          </div>
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">Coming Soon</h2>
+          <p className="text-xs text-gray-500 dark:text-gray-400 max-w-sm">
+            Dispatcher maintenance requests and vehicle workshop coordination are currently under active development.
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 }

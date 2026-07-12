@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { apiClient } from "@/lib/api";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -12,14 +12,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Truck, MapPin, Users, Clock, ArrowRight } from "lucide-react";
+import { LoadingState } from "@/components/ui/LoadingState";
 
 export default function DispatcherDashboard() {
   const [trips, setTrips] = useState<any[]>([]);
@@ -28,9 +22,6 @@ export default function DispatcherDashboard() {
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
-  const [filterType, setFilterType] = useState("all");
-  const [filterStatus, setFilterStatus] = useState("all");
 
   useEffect(() => {
     async function fetchData() {
@@ -54,199 +45,238 @@ export default function DispatcherDashboard() {
     fetchData();
   }, []);
 
-  // Compute filtered trips based on vehicle type and trip status
-  const filteredTrips = trips.filter(trip => {
-    let matchType = true;
-    if (filterType !== "all" && trip.vehicle) {
-      matchType = trip.vehicle.vehicle_type.toLowerCase() === filterType.toLowerCase();
-    }
-    let matchStatus = true;
-    if (filterStatus !== "all") {
-      matchStatus = trip.status === filterStatus;
-    }
-    return matchType && matchStatus;
-  });
-
-  // Calculate KPIs
-  const activeTripsCount = filteredTrips.filter(t => t.status === "DISPATCHED").length;
-  const pendingTripsCount = filteredTrips.filter(t => t.status === "DRAFT").length;
+  const activeTripsCount = trips.filter(t => t.status === "DISPATCHED").length;
+  const pendingTripsCount = trips.filter(t => t.status === "DRAFT").length;
+  const completedTripsCount = trips.filter(t => t.status === "COMPLETED").length;
   
   const activeVehiclesCount = vehicles.filter(v => v.status === "ON_TRIP").length;
   const availableVehiclesCount = vehicles.filter(v => v.status === "AVAILABLE").length;
-  const maintenanceVehiclesCount = vehicles.filter(v => v.status === "IN_SHOP").length;
+  const inShopVehiclesCount = vehicles.filter(v => v.status === "IN_SHOP").length;
   
   const driversOnDutyCount = drivers.filter(d => d.status === "ON_TRIP").length;
+  const availableDriversCount = drivers.filter(d => d.status === "AVAILABLE").length;
 
   const operationalVehicles = vehicles.filter(v => v.status !== "RETIRED").length;
   const fleetUtilization = operationalVehicles > 0 
     ? Math.round((activeVehiclesCount / operationalVehicles) * 100) 
     : 0;
 
-  const kpis = [
-    { label: "ACTIVE VEHICLES", value: activeVehiclesCount.toString(), borderClass: "border-l-blue-500" },
-    { label: "AVAILABLE VEHICLES", value: availableVehiclesCount.toString(), borderClass: "border-l-green-500" },
-    { label: "VEHICLES IN MAINTENANCE", value: maintenanceVehiclesCount.toString(), borderClass: "border-l-orange-500" },
-    { label: "ACTIVE TRIPS", value: activeTripsCount.toString(), borderClass: "border-l-blue-500" },
-    { label: "PENDING TRIPS", value: pendingTripsCount.toString(), borderClass: "border-l-red-500" },
-    { label: "DRIVERS ON DUTY", value: driversOnDutyCount.toString(), borderClass: "border-l-blue-500" },
-    { label: "FLEET UTILIZATION", value: `${fleetUtilization}%`, borderClass: "border-l-green-500" },
-  ];
-
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "DRAFT": return <Badge className="bg-zinc-500 hover:bg-zinc-600 text-white shadow-sm border-none">Draft</Badge>;
-      case "DISPATCHED": return <Badge className="bg-blue-500 hover:bg-blue-600 text-white shadow-sm border-none">Dispatched</Badge>;
-      case "COMPLETED": return <Badge className="bg-green-500 hover:bg-green-600 text-white shadow-sm border-none">Completed</Badge>;
-      case "CANCELLED": return <Badge className="bg-red-500 hover:bg-red-600 text-white shadow-sm border-none">Cancelled</Badge>;
-      default: return <Badge variant="outline">{status}</Badge>;
+      case "DRAFT": return <Badge className="bg-gray-500 hover:bg-gray-600 text-white shadow-xs border-none text-[10px] uppercase font-bold">Draft</Badge>;
+      case "DISPATCHED": return <Badge className="bg-blue-600 hover:bg-blue-700 text-white shadow-xs border-none text-[10px] uppercase font-bold">Dispatched</Badge>;
+      case "COMPLETED": return <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs border-none text-[10px] uppercase font-bold">Completed</Badge>;
+      case "CANCELLED": return <Badge className="bg-rose-600 hover:bg-rose-700 text-white shadow-xs border-none text-[10px] uppercase font-bold">Cancelled</Badge>;
+      default: return <Badge variant="outline" className="text-[10px] uppercase font-bold">{status}</Badge>;
     }
   };
 
-  const getEta = (trip: any) => {
-    // If the backend doesn't provide ETA, do not calculate fake ETA.
-    return "--"; 
-  };
-
-  const vehicleStatusCounts = {
-    Available: vehicles.filter(v => v.status === "AVAILABLE").length,
-    OnTrip: vehicles.filter(v => v.status === "ON_TRIP").length,
-    InShop: vehicles.filter(v => v.status === "IN_SHOP").length,
-    Retired: vehicles.filter(v => v.status === "RETIRED").length,
-  };
-
-  const totalVehicles = vehicles.length || 1; // Prevent div by zero
-
-  const vehicleStatusData = [
-    { label: "Available", percentage: (vehicleStatusCounts.Available / totalVehicles) * 100, color: "bg-green-500" },
-    { label: "On Trip", percentage: (vehicleStatusCounts.OnTrip / totalVehicles) * 100, color: "bg-blue-500" },
-    { label: "In Shop", percentage: (vehicleStatusCounts.InShop / totalVehicles) * 100, color: "bg-orange-500" },
-    { label: "Retired", percentage: (vehicleStatusCounts.Retired / totalVehicles) * 100, color: "bg-red-500" },
-  ];
+  if (loading) {
+    return <LoadingState message="Loading dispatcher operations..." />;
+  }
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
-      
+    <div className="space-y-8 max-w-[1400px] mx-auto font-sans pb-12">
+      {/* Top Header matching Fleet Manager SAME TO SAME */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+            Dispatch Operations Overview
+          </h1>
+        </div>
+
+        <Link
+          href="/dispatcher/profile"
+          className="inline-flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-white dark:bg-[#121212] border border-gray-200 dark:border-white/10 hover:border-gray-400 dark:hover:border-white/25 text-xs font-semibold text-gray-800 dark:text-gray-200 hover:text-black dark:hover:text-white transition-all shadow-2xs group self-start sm:self-auto"
+        >
+          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span>Profile Settings</span>
+          <span className="text-gray-400 group-hover:translate-x-0.5 transition-transform">→</span>
+        </Link>
+      </div>
+
       {error && (
-        <div className="flex gap-2 items-start text-red-400 text-sm bg-red-500/10 p-3 rounded-md border border-red-500/20">
+        <div className="flex gap-2 items-start text-red-600 dark:text-red-400 text-sm bg-red-500/10 p-3.5 rounded-xl border border-red-500/20">
           <AlertCircle size={18} className="shrink-0 mt-0.5" />
           <p>{error}</p>
         </div>
       )}
 
-      {/* Filters */}
-      <div className="space-y-2">
-        <label className="text-xs font-semibold text-zinc-500 tracking-wider">FILTERS</label>
-        <div className="flex gap-4">
-          <Select value={filterType} onValueChange={(v) => setFilterType(v || "all")}>
-            <SelectTrigger className="w-[180px] bg-transparent border-zinc-700 text-zinc-300 h-9">
-              <SelectValue placeholder="Vehicle Type: All" />
-            </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-zinc-700 text-zinc-300">
-              <SelectItem value="all">Vehicle Type: All</SelectItem>
-              <SelectItem value="truck">Truck</SelectItem>
-              <SelectItem value="van">Van</SelectItem>
-            </SelectContent>
-          </Select>
+      {/* 4 Beautiful Standalone Metric Cards matching Fleet Manager SAME TO SAME */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Link
+          href="/dispatcher/trips"
+          className="group rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#121212] p-6 flex flex-col justify-between hover:border-gray-400 dark:hover:border-white/20 transition-all shadow-xs"
+        >
+          <div className="flex items-center justify-between mb-4 text-gray-400 dark:text-gray-500">
+            <span className="text-[11px] uppercase tracking-wider font-semibold">Active Trips</span>
+            <div className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-white/5 flex items-center justify-center group-hover:bg-black group-hover:text-white dark:group-hover:bg-white dark:group-hover:text-black transition-colors">
+              <MapPin size={15} />
+            </div>
+          </div>
+          <div>
+            <div className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+              {activeTripsCount}
+            </div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 mt-2 flex items-center gap-2">
+              <span>{pendingTripsCount} Pending</span>
+              <span>•</span>
+              <span>{completedTripsCount} Completed</span>
+            </div>
+          </div>
+        </Link>
 
-          <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v || "all")}>
-            <SelectTrigger className="w-[180px] bg-transparent border-zinc-700 text-zinc-300 h-9">
-              <SelectValue placeholder="Status: All" />
-            </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-zinc-700 text-zinc-300">
-              <SelectItem value="all">Status: All</SelectItem>
-              <SelectItem value="DRAFT">Draft</SelectItem>
-              <SelectItem value="DISPATCHED">Dispatched</SelectItem>
-              <SelectItem value="COMPLETED">Completed</SelectItem>
-              <SelectItem value="CANCELLED">Cancelled</SelectItem>
-            </SelectContent>
-          </Select>
+        <Link
+          href="/dispatcher/fleet"
+          className="group rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#121212] p-6 flex flex-col justify-between hover:border-gray-400 dark:hover:border-white/20 transition-all shadow-xs"
+        >
+          <div className="flex items-center justify-between mb-4 text-gray-400 dark:text-gray-500">
+            <span className="text-[11px] uppercase tracking-wider font-semibold">Fleet Utilization</span>
+            <div className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-white/5 flex items-center justify-center group-hover:bg-black group-hover:text-white dark:group-hover:bg-white dark:group-hover:text-black transition-colors">
+              <Truck size={15} />
+            </div>
+          </div>
+          <div>
+            <div className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+              {fleetUtilization}%
+            </div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 mt-2 flex items-center gap-2">
+              <span>{activeVehiclesCount} Active</span>
+              <span>•</span>
+              <span>{availableVehiclesCount} Available</span>
+            </div>
+          </div>
+        </Link>
 
-          <Select disabled defaultValue="all">
-            <SelectTrigger className="w-[180px] bg-transparent border-zinc-800 text-zinc-500 h-9 opacity-50 cursor-not-allowed">
-              <SelectValue placeholder="Region: N/A" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Region: N/A</SelectItem>
-            </SelectContent>
-          </Select>
-          <span className="text-xs text-zinc-600 self-center">* Region filtering is not supported by the backend yet.</span>
-        </div>
+        <Link
+          href="/dispatcher/drivers"
+          className="group rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#121212] p-6 flex flex-col justify-between hover:border-gray-400 dark:hover:border-white/20 transition-all shadow-xs"
+        >
+          <div className="flex items-center justify-between mb-4 text-gray-400 dark:text-gray-500">
+            <span className="text-[11px] uppercase tracking-wider font-semibold">Drivers On Duty</span>
+            <div className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-white/5 flex items-center justify-center group-hover:bg-black group-hover:text-white dark:group-hover:bg-white dark:group-hover:text-black transition-colors">
+              <Users size={15} />
+            </div>
+          </div>
+          <div>
+            <div className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+              {driversOnDutyCount}
+            </div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 mt-2 flex items-center gap-2">
+              <span>{availableDriversCount} Ready</span>
+              <span>•</span>
+              <span>{drivers.length} Total</span>
+            </div>
+          </div>
+        </Link>
+
+        <Link
+          href="/dispatcher/trips"
+          className="group rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#121212] p-6 flex flex-col justify-between hover:border-gray-400 dark:hover:border-white/20 transition-all shadow-xs"
+        >
+          <div className="flex items-center justify-between mb-4 text-gray-400 dark:text-gray-500">
+            <span className="text-[11px] uppercase tracking-wider font-semibold">Pending Dispatches</span>
+            <div className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-white/5 flex items-center justify-center group-hover:bg-amber-500 group-hover:text-white transition-colors">
+              <Clock size={15} />
+            </div>
+          </div>
+          <div>
+            <div className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+              {pendingTripsCount}
+            </div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              Trips Awaiting Dispatch
+            </div>
+          </div>
+        </Link>
       </div>
 
-      {/* KPI Cards */}
-      <div className="flex flex-wrap gap-4">
-        {kpis.map((kpi, idx) => (
-          <Card key={idx} className={`bg-[#18181b] border-y border-r border-l-4 border-y-zinc-800 border-r-zinc-800 ${kpi.borderClass} rounded-md shadow-none flex-1 min-w-[140px]`}>
-            <CardContent className="p-4 flex flex-col justify-between h-full space-y-2">
-              <span className="text-[10px] font-semibold tracking-wider text-zinc-500 uppercase">{kpi.label}</span>
-              <span className="text-3xl font-light text-zinc-100">
-                {loading ? "-" : kpi.value}
-              </span>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {/* Rounded Panels Grid matching Fleet Manager SAME TO SAME */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left 2 Cols: Recent Dispatches */}
+        <div className="lg:col-span-2 rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#121212] p-6 shadow-xs">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              Recent Dispatches
+            </h2>
+            <Link
+              href="/dispatcher/trips"
+              className="text-xs font-semibold text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white flex items-center gap-1 transition-colors"
+            >
+              <span>View All Trips</span>
+              <ArrowRight size={13} />
+            </Link>
+          </div>
 
-      {/* Main Grid: Recent Trips & Vehicle Status */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pt-4">
-        
-        {/* Recent Trips */}
-        <div className="lg:col-span-2 space-y-4">
-          <h2 className="text-sm font-semibold text-zinc-400 tracking-wider">RECENT TRIPS</h2>
-          <div className="rounded-md border border-zinc-800 bg-[#18181b] overflow-hidden">
-            {loading ? (
-              <div className="p-8 text-center text-zinc-500">Loading trips...</div>
-            ) : filteredTrips.length === 0 ? (
-              <div className="p-8 text-center text-zinc-500">No recent trips found.</div>
-            ) : (
-              <Table>
-                <TableHeader className="bg-transparent border-b border-zinc-800">
-                  <TableRow className="hover:bg-transparent border-none">
-                    <TableHead className="text-xs text-zinc-500 font-medium tracking-wider h-10 uppercase">Trip</TableHead>
-                    <TableHead className="text-xs text-zinc-500 font-medium tracking-wider h-10 uppercase">Vehicle</TableHead>
-                    <TableHead className="text-xs text-zinc-500 font-medium tracking-wider h-10 uppercase">Driver</TableHead>
-                    <TableHead className="text-xs text-zinc-500 font-medium tracking-wider h-10 uppercase">Status</TableHead>
-                    <TableHead className="text-xs text-zinc-500 font-medium tracking-wider h-10 uppercase">ETA</TableHead>
+          {trips.length === 0 ? (
+            <div className="py-12 text-center text-xs text-gray-400">No trips found.</div>
+          ) : (
+            <Table>
+              <TableHeader className="bg-gray-50/50 dark:bg-white/[0.02]">
+                <TableRow className="border-b border-gray-100 dark:border-white/[0.06] hover:bg-transparent">
+                  <TableHead className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 h-9">Trip</TableHead>
+                  <TableHead className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 h-9">Route</TableHead>
+                  <TableHead className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 h-9">Vehicle & Driver</TableHead>
+                  <TableHead className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 h-9">Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {trips.slice(0, 6).map((trip) => (
+                  <TableRow key={trip.id} className="border-b border-gray-100 dark:border-white/[0.05] hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors">
+                    <TableCell className="font-bold text-xs text-gray-900 dark:text-white py-3">{trip.trip_number}</TableCell>
+                    <TableCell className="text-xs font-semibold text-gray-700 dark:text-gray-300 py-3">
+                      {trip.source} → {trip.destination}
+                    </TableCell>
+                    <TableCell className="py-3">
+                      <div className="font-bold text-xs text-gray-900 dark:text-white">{trip.vehicle?.registration_number || "--"}</div>
+                      <div className="text-[11px] text-gray-500 dark:text-gray-400">{trip.driver?.name || "--"}</div>
+                    </TableCell>
+                    <TableCell className="py-3">
+                      {getStatusBadge(trip.status)}
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredTrips.slice(0, 5).map((trip) => (
-                    <TableRow key={trip.id} className="border-b border-zinc-800 hover:bg-zinc-800/20 border-none">
-                      <TableCell className="font-medium text-zinc-300 py-3">{trip.trip_number}</TableCell>
-                      <TableCell className="text-zinc-400 py-3">{trip.vehicle?.registration_number || "--"}</TableCell>
-                      <TableCell className="text-zinc-400 py-3">{trip.driver?.name || "--"}</TableCell>
-                      <TableCell className="py-3">
-                        {getStatusBadge(trip.status)}
-                      </TableCell>
-                      <TableCell className="text-zinc-400 text-sm py-3">{getEta(trip)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </div>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </div>
 
-        {/* Vehicle Status */}
-        <div className="space-y-4">
-          <h2 className="text-sm font-semibold text-zinc-400 tracking-wider">VEHICLE STATUS</h2>
-          <div className="space-y-6 mt-6">
-            {vehicleStatusData.map((item, idx) => (
-              <div key={idx} className="flex items-center gap-4">
-                <span className="text-sm text-zinc-400 w-20">{item.label}</span>
-                <div className="flex-1 h-3 bg-zinc-800 rounded-sm overflow-hidden">
-                  <div 
-                    className={`h-full ${item.color} rounded-sm transition-all duration-500`} 
-                    style={{ width: `${item.percentage}%` }}
-                  />
-                </div>
+        {/* Right 1 Col: Status Breakdown matching Fleet Manager Status Breakdown Panel */}
+        <div className="rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#121212] p-6 shadow-xs flex flex-col justify-between">
+          <div>
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-5">
+              Status Breakdown
+            </h2>
+            <div className="space-y-3 text-xs">
+              <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-white/[0.05]">
+                <span className="text-gray-600 dark:text-gray-300 font-medium">Dispatched Trips</span>
+                <span className="font-bold text-gray-900 dark:text-white bg-gray-200 dark:bg-white/10 px-2.5 py-0.5 rounded-full">{activeTripsCount}</span>
               </div>
-            ))}
+              <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-white/[0.05]">
+                <span className="text-gray-600 dark:text-gray-300 font-medium">Draft Trips</span>
+                <span className="font-bold text-gray-900 dark:text-white bg-gray-200 dark:bg-white/10 px-2.5 py-0.5 rounded-full">{pendingTripsCount}</span>
+              </div>
+              <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-white/[0.05]">
+                <span className="text-gray-600 dark:text-gray-300 font-medium">Available Vehicles</span>
+                <span className="font-bold text-gray-900 dark:text-white bg-gray-200 dark:bg-white/10 px-2.5 py-0.5 rounded-full">{availableVehiclesCount}</span>
+              </div>
+              <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-white/[0.05]">
+                <span className="text-gray-600 dark:text-gray-300 font-medium">Vehicles On Trip</span>
+                <span className="font-bold text-gray-900 dark:text-white bg-gray-200 dark:bg-white/10 px-2.5 py-0.5 rounded-full">{activeVehiclesCount}</span>
+              </div>
+              <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-white/[0.05]">
+                <span className="text-gray-600 dark:text-gray-300 font-medium">Drivers Ready</span>
+                <span className="font-bold text-gray-900 dark:text-white bg-gray-200 dark:bg-white/10 px-2.5 py-0.5 rounded-full">{availableDriversCount}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 pt-4 border-t border-gray-100 dark:border-white/[0.06] flex justify-between items-center text-xs">
+            <span className="text-gray-500 dark:text-gray-400">Total Fleet Active</span>
+            <span className="font-bold text-gray-900 dark:text-white">{activeVehiclesCount + availableVehiclesCount} units</span>
           </div>
         </div>
-
       </div>
-
     </div>
   );
 }
